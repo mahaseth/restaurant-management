@@ -8,7 +8,7 @@ dotenv.config();
 
 
 const app = express();
-mongoose.connect("mongodb+srv://manjishchaulagain80_db_user:ZnUUWVkEf0GeRZS9@cluster0.3jtwejj.mongodb.net/").then(() => {console.log("Connected to MongoDB")}).catch((err) => {console.error("Failed to connect to MongoDB", err)});    
+mongoose.connect("mongodb://localhost:27017").then(() => {console.log("Connected to MongoDB")}).catch((err) => {console.error("Failed to connect to MongoDB", err)});    
 
 app.use(cors());
 app.use(express.json());
