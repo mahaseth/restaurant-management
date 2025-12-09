@@ -1,5 +1,8 @@
+import homeService from "../services/home.service.js";
+
 const homeController = (req, res) => {
-  res.send("Welcome to the Restaurant Management System API");
+  const data = homeService.getApplicationInfo();
+  res.json(data);
 };
 
 export { homeController };
