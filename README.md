@@ -5,6 +5,7 @@ A simple restaurant management system (backend + design). This repository contai
 ## Prerequisites
 
 - Node.js (LTS recommended) and `npm`
+- Node.js (>=18 LTS) and `npm`
 - MongoDB (local or remote instance)
 
 ## Backend — Run locally
@@ -58,3 +59,4 @@ Static UI files are in the `Design/` folder: `home.html`, `nav.html`, `sign-in.h
 
 - If you encounter module resolution errors with ESM, ensure local imports include the `.js` extension (the backend uses ESM via `"type": "module"` in `backend/package.json`).
 - If you want me to run the dev server and verify startup here, tell me and I'll run it.
+- The backend recommends Node.js v18 or later. An `.nvmrc` file is included in the `backend/` folder to make switching versions easy (`backend/.nvmrc`).
