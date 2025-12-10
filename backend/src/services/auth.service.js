@@ -42,13 +42,22 @@ const register = async (data) => {
   const salt = bcrypt.genSaltSync(10);
   const hashedPassword = bcrypt.hashSync(data.password, salt);
 
-  return await User.create({
+  const newUser = await User.create({
     name: data.name,
     email: data.email,
     phone: data.phone,
     address: data.address,
     password: hashedPassword,
   });
+  return {
+    _id: newUser._id,
+    address: newUser.address,
+    name: newUser.name,
+    email: newUser.email,
+    roles: newUser.roles,
+    phone: newUser.phone,
+    isActive: newUser.isActive,
+  };
 };
 
 export default { register, login };

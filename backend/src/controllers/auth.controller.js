@@ -1,4 +1,5 @@
 import authService from "../services/auth.service.js";
+import { createJWT } from "../utils/jwt.js";
 
 const login = async (req, res) => {
   try {
