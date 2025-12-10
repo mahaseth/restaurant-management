@@ -17,7 +17,15 @@ const login = async (data) => {
   if (!isPasswordMatch)
     throw { status: 400, message: "Incorrect email or password." };
 
-  return user;
+  return {
+    _id: user._id,
+    address: user.address,
+    name: user.name,
+    email: user.email,
+    roles: user.roles,
+    phone: user.phone,
+    isActive: user.isActive,
+  };
 };
 
 const register = async (data) => {
