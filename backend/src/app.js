@@ -5,13 +5,18 @@ import { homeRouter } from "./routes/home.routes.js";
 import userRoute from "./routes/user.routes.js";
 import authRoute from "./routes/auth.routes.js";
 import connectDB from "./config/database.js";
+import auth from "./middlewares/auth.js";
+import logger from "./middlewares/logger.js";
+import roleBasedAuth from "./middlewares/roleBasedAuth.js";
+import { ROLE_ADMIN } from "./constants/roles.js";
 
 const app = express();
 connectDB();
 app.use(bodyParser.json());
+app.use(logger);
 
 app.use("/", homeRouter);
-app.use("/api/users", userRoute);
+app.use("/api/users", auth, roleBasedAuth(ROLE_ADMIN), userRoute);
 app.use("/api/auth", authRoute);
 
 app.listen(config.port, () => {
