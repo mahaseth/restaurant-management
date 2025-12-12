@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RestoSmart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          fontFamily: {
+            sans: ["Lato", "sans-serif"],
+          },
+          extend: {
+            colors: {
+              primary: "#ef4444",
+              secondary: "#b91c1c",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+
+  <body class="light bg-white dark:bg-gray-900">
+    <!-- Top Notice -->
+    <div class="w-full text-center py-1 text-sm text-white bg-gray-900">
+      Welcome to RestoSmart — Modern QR Ordering & POS Restaurant System
+    </div>
+
+    <!-- Header -->
+    <header class="w-full bg-white dark:bg-gray-900 sticky top-0 shadow z-50">
+      <div class="container mx-auto py-3 px-4">
+        <div class="flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-primary">
+            <a href="#"><i class="fas fa-utensils"></i> RestoSmart</a>
+          </h1>
+
+          <!-- Navbar -->
+          <nav class="hidden md:flex gap-6 font-medium">
+            <a class="hover:text-primary dark:text-gray-300" href="#">Home</a>
+            <a class="hover:text-primary dark:text-gray-300" href="#"
+              >Features</a
+            >
+            <a class="hover:text-primary dark:text-gray-300" href="#">Menu</a>
+            <a class="hover:text-primary dark:text-gray-300" href="#"
+              >Pricing</a
+            >
+            <a class="hover:text-primary dark:text-gray-300" href="#"
+              >Contact</a
+            >
+          </nav>
+
+          <!-- Right Side Icons -->
+          <div class="flex items-center gap-4">
+            <button class="text-gray-700 dark:text-gray-300 hover:text-primary">
+              <i class="fas fa-moon"></i>
+            </button>
+
+            <a
+              href="/signin"
+              class="px-4 py-1.5 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition"
+              >Sign In</a
+            >
+
+            <a
+              href="/signup"
+              class="px-4 py-1.5 bg-primary text-white rounded-lg hover:bg-secondary transition"
+              >Sign Up</a
+            >
+
+            <button class="block md:hidden text-gray-700 dark:text-gray-300">
+              <i class="fas fa-bars text-2xl"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section
+      class="py-16 md:py-24 bg-gradient-to-r from-red-50 to-orange-100 dark:from-gray-800 dark:to-gray-900"
+    >
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row items-center gap-8">
+          <!-- Left -->
+          <div class="md:w-1/2">
+            <h1
+              class="text-4xl md:text-5xl font-bold text-gray-800 dark:text-white leading-tight"
+            >
+              The Future of Dining with
+              <span class="text-primary">RestoSmart</span>
+            </h1>
+            <p class="mt-4 text-lg text-gray-600 dark:text-gray-300">
+              QR Ordering • POS Billing • Kitchen Display • Smart Inventory
+              Everything your restaurant needs in one system.
+            </p>
+
+            <div class="mt-6 flex gap-4">
+              <a
+                href="#"
+                class="px-6 py-3 bg-primary text-white rounded-lg text-lg font-medium hover:bg-secondary"
+                >Get Started</a
+              >
+
+              <a
+                href="#"
+                class="px-6 py-3 border border-primary text-primary rounded-lg text-lg font-medium hover:bg-primary hover:text-white"
+                >Learn More</a
+              >
+            </div>
+          </div>
+
+          <!-- Right Image -->
+          <div class="md:w-1/2 flex justify-center">
+            <div class="relative max-w-md">
+              <div
+                class="absolute -left-4 -top-4 w-full h-full bg-primary/20 rounded-2xl"
+              ></div>
+              <img
+                src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200"
+                class="rounded-2xl shadow-lg relative"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="py-16 dark:bg-gray-800">
+      <div class="container mx-auto px-4">
+        <h2
+          class="text-center text-3xl font-bold text-gray-800 dark:text-white mb-12"
+        >
+          Why Choose RestoSmart?
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div
+            class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center shadow hover:shadow-lg transition"
+          >
+            <div class="bg-primary/10 p-4 rounded-full w-20 h-20 mx-auto mb-4">
+              <i class="fas fa-qrcode text-3xl text-primary"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">QR Ordering</h3>
+            <p class="text-gray-600 dark:text-gray-300">
+              Customers scan and order instantly from their phone.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div
+            class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center shadow hover:shadow-lg transition"
+          >
+            <div
+              class="bg-green-500/10 p-4 rounded-full w-20 h-20 mx-auto mb-4"
+            >
+              <i class="fas fa-cash-register text-3xl text-green-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">POS + Billing</h3>
+            <p class="text-gray-600 dark:text-gray-300">
+              Fast, accurate billing with discounts, tax & split payments.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div
+            class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 text-center shadow hover:shadow-lg transition"
+          >
+            <div
+              class="bg-orange-500/10 p-4 rounded-full w-20 h-20 mx-auto mb-4"
+            >
+              <i class="fas fa-fire text-3xl text-orange-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Kitchen Dashboard</h3>
+            <p class="text-gray-600 dark:text-gray-300">
+              Real-time order tracking for chefs & kitchen staff.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Popular Dishes -->
+    <section class="py-16 bg-gray-50 dark:bg-gray-900">
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-3xl font-bold text-gray-800 dark:text-white">
+            Popular Dishes
+          </h2>
+          <a class="text-primary" href="#">View All</a>
+        </div>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        >
+          <!-- Dish Card -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow hover:-translate-y-1 transition"
+          >
+            <img
+              src="https://plus.unsplash.com/premium_photo-1661419883163-bb4df1c10109?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              class="w-full h-48 object-cover"
+            />
+            <div class="p-4">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                Grilled Chicken
+              </h3>
+              <div class="flex justify-between items-center mt-3">
+                <span class="text-primary font-bold">$12.99</span>
+                <button
+                  class="bg-primary text-white px-3 py-1 rounded-full hover:bg-secondary"
+                >
+                  <i class="fas fa-utensils"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- More dish cards (copy/paste) -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-16 bg-white dark:bg-gray-800">
+      <div class="container mx-auto px-4">
+        <h2
+          class="text-center text-3xl font-bold text-gray-800 dark:text-white mb-12"
+        >
+          What Customers Say
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Testimonial Card -->
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 shadow">
+            <div class="flex items-center gap-4 mb-4">
+              <img
+                class="w-12 h-12 rounded-full"
+                src="https://randomuser.me/api/portraits/men/32.jpg"
+              />
+              <div>
+                <h4 class="font-semibold text-gray-800 dark:text-white">
+                  Rahul Sharma
+                </h4>
+                <div class="text-yellow-400">★★★★★</div>
+              </div>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300">
+              “Amazing QR system! My restaurant runs 3× faster now.”
+            </p>
+          </div>
+
+          <!-- More reviews -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="py-16 bg-gray-50 dark:bg-gray-900">
+      <div class="container mx-auto px-4">
+        <h2
+          class="text-center text-3xl font-bold text-gray-800 dark:text-white mb-12"
+        >
+          Contact Us
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div>
+            <h3
+              class="text-xl font-semibold text-gray-800 dark:text-white mb-6"
+            >
+              Reach Us
+            </h3>
+
+            <div class="space-y-4">
+              <p
+                class="flex items-center gap-3 text-gray-600 dark:text-gray-300"
+              >
+                <i class="fas fa-map-marker-alt text-primary"></i>
+                Kathmandu, Nepal
+              </p>
+
+              <p
+                class="flex items-center gap-3 text-gray-600 dark:text-gray-300"
+              >
+                <i class="fas fa-phone text-primary"></i>
+                +977 9812345678
+              </p>
+
+              <p
+                class="flex items-center gap-3 text-gray-600 dark:text-gray-300"
+              >
+                <i class="fas fa-envelope text-primary"></i>
+                support@restosmart.com
+              </p>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <div>
+            <form class="space-y-4">
+              <input
+                class="w-full px-4 py-3 rounded-lg border dark:bg-gray-800 dark:text-white"
+                placeholder="Your Name"
+              />
+
+              <input
+                class="w-full px-4 py-3 rounded-lg border dark:bg-gray-800 dark:text-white"
+                placeholder="Your Email"
+              />
+
+              <textarea
+                class="w-full px-4 py-3 rounded-lg border dark:bg-gray-800 dark:text-white"
+                rows="5"
+                placeholder="Your Message"
+              ></textarea>
+
+              <button
+                class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary"
+              >
+                Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8">
+      <div class="container mx-auto text-center">
+        <p class="text-gray-400">© 2025 RestoSmart — All Rights Reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>
