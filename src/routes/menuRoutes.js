@@ -1,14 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const {   
+import express from 'express';
+import {
+    getAllMenuItems,
     createMenuItem,
-    deleteMenuItem,
-} = require('../controllers/menuController');
+    deleteMenuItem
+} from '../controllers/menu.controller.js';
 
+const router = express.Router();
 
-// Admin routes (add authentication later)
+router.get('/', getAllMenuItems);
 router.post('/', createMenuItem);
 router.delete('/:id', deleteMenuItem);
 
-
-module.exports = router;
+export default router;
