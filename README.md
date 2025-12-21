@@ -10,6 +10,8 @@ A simple restaurant management system (backend + design). This repository contai
 
 ## Libary used
 - zod : for validation of json data
+- cloudinary : used for storing files in bucket
+- multer : for supporting form data with files.
 
 ## Backend — Run locally
 
