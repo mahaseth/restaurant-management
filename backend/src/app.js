@@ -11,15 +11,20 @@ import roleBasedAuth from "./middlewares/roleBasedAuth.js";
 import { ROLE_ADMIN } from "./constants/roles.js";
 import billRoutes from "./routes/bill.routes.js";
 import menuRoutes from "./routes/menu.routes.js";
-
+import multer from "multer";
+import connectCloudinary from "./config/cloudinary.js";
 
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+
 connectDB();
+connectCloudinary();
+
 app.use(bodyParser.json());
 app.use(logger);
 
 app.use("/", homeRouter);
-app.use("/api/users", auth, roleBasedAuth(ROLE_ADMIN), userRoute);
+app.use("/api/users", auth, upload.single("image"), userRoute);
 app.use("/api/auth", authRoute);
 app.use('/api/bill', billRoutes);
 app.use('/api/menuitems', menuRoutes);

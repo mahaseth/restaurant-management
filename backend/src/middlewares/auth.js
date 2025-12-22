@@ -11,9 +11,9 @@ const auth = async (req, res, next) => {
 
   try {
     const data = await verifyJWT(token);
-
-    req.user = data;
-
+    req.user = data.user;
+    req.restaurant = data.restaurant;
+    console.log(data);
     next();
   } catch (error) {
     res.status(401).send("Invalid token.");
