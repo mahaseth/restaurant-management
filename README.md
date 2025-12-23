@@ -32,9 +32,15 @@ copy .env.example .env
 
 ```bash
 npm install
+npm i node
+npm i dotenv
+npm i mongoose
+npm i express
+npm i pdfmake
 ```
 
 4. Start MongoDB (if running locally).
+There might be error between url and uri.
 
 Start your MongoDB server however you normally do on your OS — for example run `mongod`, start the MongoDB service, or use Docker. If you need a command example:
 
