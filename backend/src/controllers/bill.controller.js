@@ -1,39 +1,80 @@
-import generateBillPDF from '../utils/generateBillPDF.js';
-const generateBill = async (req, res) => {
+import Bill from "../models/Bill.js";
+
+async function getNextBillNumber() {
+  const lastBill = await Bill.findOne().sort({ billNumber: -1 });
+  return lastBill ? lastBill.billNumber + 1 : 1001;
+}
+
+export const createBill = async (req, res) => {
   try {
     const {
-      items,           // Array: [{ name, quantity, rate }]
-      discountPercent, // e.g., 10 for 10%
-      totalPaid,       // amount paid by customer
-      username         // from req.user or session
+      items,
+      tableNumber,
+      orderType,
+      discountAmount = 0,
+      paymentMethod = "CASH",
+    
+      paidAmount = 0,
+      vatPercent = 13,
+      serviceChargePercent = 0,
+      
+      username = "Admin"
     } = req.body;
 
-    // Validate input
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Items are required' });
+    if (!items || !items.length) {
+      return res.status(400).json({ message: "Items required" });
     }
 
-    const billData = {
-      items,
-      vatPercent: 13,
-      discountPercent: parseFloat(discountPercent) || 0,
-      totalPaid: parseFloat(totalPaid) || 0,
-      username: username || 'Admin',
-      panNo: '123456789',     // ← Replace with real value or from DB/env
-      regNo: 'REG987654321'   // ← Replace with real value
-    };
+    const billNumber = await getNextBillNumber();
 
-    const pdfDoc = generateBillPDF(billData);
+    // Calculate totals
+    let subtotal = 0;
+    const billItems = items.map(i => {
+      const quantity = parseFloat(i.quantity) || 0;
+      const rate = parseFloat(i.rate) || 0;
+      const amount = quantity * rate;
+      subtotal += amount;
+      return { ...i, quantity, rate, amount };
+    });
 
-    // Set headers for PDF download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename=bill.pdf'); // or 'attachment' to force download
+    const vatAmount = (subtotal * vatPercent) / 100;
+    const serviceChargeAmount = (subtotal * serviceChargePercent) / 100;
+    const totalAmount = subtotal + vatAmount + serviceChargeAmount - discountAmount;
 
-    pdfDoc.pipe(res);
-    pdfDoc.end();
+    // Calculate returnAmount
+    const paid = parseFloat(paidAmount) || 0;
+    const returnAmount = paid - totalAmount > 0 ? paid - totalAmount : 0;
+
+    const bill = new Bill({
+      billNumber,
+      items: billItems,
+      tableNumber,
+      orderType,
+      discountAmount,
+      paymentMethod,
+      subtotal,
+      vatPercent,
+      vatAmount,
+      serviceChargePercent,
+      serviceChargeAmount,
+      totalAmount,
+      paidAmount: paid,
+      returnAmount,
+      status: "paid",
+      username,
+      createdAt: new Date()
+    });
+
+    await bill.save();
+
+    res.status(201).json({
+      success: true,
+      bill
+    });
   } catch (error) {
-    console.error('PDF Generation Error:', error);
-    res.status(500).json({ error: 'Failed to generate bill' });
+    res.status(500).json({
+      message: "Bill creation failed",
+      error: error.message
+    });
   }
 };
-export {generateBill};

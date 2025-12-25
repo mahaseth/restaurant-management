@@ -20,6 +20,10 @@ const restaurantSchema = mongoose.Schema({
       type: String,
       default: "Nepal",
     },
+    pan: {
+      type: String,
+      required: [true, "PAN is required."],
+    },
   },
   subscriptionPlan: {
     type: String,

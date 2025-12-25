@@ -1,0 +1,24 @@
+{
+  "name": "restaurant-management",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "description": "A simple restaurant management system (backend + design). This repository contains a Node.js/Express backend and static design files.",
+  "main": "testBill.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mahaseth/restaurant-management.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mahaseth/restaurant-management/issues"
+  },
+  "homepage": "https://github.com/mahaseth/restaurant-management#readme"
+}
