@@ -1,5 +1,22 @@
 import mongoose from 'mongoose';
 const menuItemSchema = new mongoose.Schema({
+    restaurantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: [true, 'Restaurant ID is required'],
+        index: true
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User ID is required'],
+        index: true
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        index: true
+    },
     name: {type: String, required: true, trim:true},
     description: {type: String, required: true, trim:true},
     price: {type: Number, required: true},
@@ -20,6 +37,8 @@ const menuItemSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+}, {
+    timestamps: true
 });
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 export default MenuItem;
