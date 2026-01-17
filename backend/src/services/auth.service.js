@@ -2,100 +2,71 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Restaurant from "../models/Restaurant.js";
 
-const login = async (data) => {
+const login = async ({ email, phone, password }) => {
   const user = await User.findOne({
-    $or: [{ email: data?.email }, { phone: data?.phone }],
+    $or: [{ email }, { phone }]
   });
 
-  if (!user)
-    throw {
-      status: 404,
-      message: "User not found.",
-    };
-
-  const isPasswordMatch = bcrypt.compareSync(data.password, user.password);
-
-  if (!isPasswordMatch)
-    throw { status: 400, message: "Incorrect email or password." };
-
-  const restaurant = await Restaurant.findOne({_id: user.restaurantId});
-  if(!restaurant) {
-    throw {
-      status: 404,
-      message: "User doesnot belong to any restaturant."
-    }
+  if (!user) {
+    throw { status: 404, message: "User not found" };
   }
+
+  const ok = bcrypt.compareSync(password, user.password);
+  if (!ok) {
+    throw { status: 400, message: "Invalid credentials" };
+  }
+
+  const restaurant = await Restaurant.findById(user.restaurantId);
+  if (!restaurant) {
+    throw { status: 404, message: "Restaurant not found" };
+  }
+
   return {
-    restaurant: {
-      _id: restaurant._id,
-      name: restaurant.name,
-      address: restaurant.address,
-      subscriptionPlan: restaurant.subscriptionPlan
-    },
+    userId: user._id,
+    restaurantId: restaurant._id,
     user: {
-      _id: user._id,
       name: user.name,
-      email: user.email,
-      phone: user.phone,
-      isActive: user.isActive,
       roles: user.roles
-    }
-  }
-};
-
-const register = async (data) => {
-  const restaurant = await Restaurant.findOne({ name: data?.restaurant?.name })
-  if(restaurant) {
-    throw {
-      status: 409,
-      message: "Restaurant with same name already exists."
-    }
-  }
-
-  const user = await User.findOne({
-    $or: [{ email: data?.owner?.email }, { phone: data?.owner?.phone }],
-  });
-
-  if (user)
-    throw {
-      status: 409,
-      message: "Owner with same eamil or phone number already exists.",
-    };
-
-  const newRestaurant = await Restaurant.create({
-    name: data?.restaurant?.name,
-    email: data?.owner?.email,
-    phone: data?.owner?.phone,
-    address: data?.restaurant?.address
-  })
-
-  const salt = bcrypt.genSaltSync(10);
-  const hashedPassword = bcrypt.hashSync(data?.owner?.password, salt);
-
-  const newUser = await User.create({
-    restaurantId: newRestaurant._id,
-    name: data?.owner?.name,
-    email: data?.owner?.email,
-    phone: data?.owner?.phone,
-    password: hashedPassword,
-  });
-
-  return {
-    restaurant: {
-      _id: newRestaurant._id,
-      name: newRestaurant.name,
-      address: newRestaurant.address,
-      subscriptionPlan: newRestaurant.subscriptionPlan
     },
-    user: {
-      _id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      isActive: newUser.isActive,
-      roles: newUser.roles
+    restaurant: {
+      res_name: restaurant.res_name,
+      address: restaurant.address,
+      phoneNo: restaurant.phoneNo,
+      panNo: restaurant.panNo,
+      regNo: restaurant.regNo
     }
   };
 };
 
-export default { register, login };
+const register = async (data) => {
+  const exists = await Restaurant.findOne({ res_name: data.restaurant.name });
+  if (exists) {
+    throw { status: 409, message: "Restaurant exists" };
+  }
+
+  const restaurant = await Restaurant.create({
+    res_name: data.restaurant.name,
+    address: data.restaurant.address,
+    phoneNo: data.restaurant.phoneNo ,
+    panNo: data.restaurant.panNo || "",
+    regNo: data.restaurant.regNo || ""
+  });
+
+  const hash = bcrypt.hashSync(data.owner.password, 10);
+
+  const user = await User.create({
+    restaurantId: restaurant._id,
+    name: data.owner.name,
+    email: data.owner.email,
+    phone: data.owner.phone,
+    password: hash,
+    roles: ["OWNER"]
+  });
+
+  return {
+    userId: user._id,
+    restaurantId: restaurant._id
+  };
+};
+
+export default { login, register };

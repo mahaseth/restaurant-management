@@ -1,4 +1,4 @@
-
+// backend/src/controllers/report.controller.js
 import Bill from "../models/Bill.js";
 
 export const dailySales = async (req, res) => {

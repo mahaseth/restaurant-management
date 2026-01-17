@@ -1,43 +1,58 @@
+// backend/src/models/Bill.js
 import mongoose from "mongoose";
 
 const billSchema = new mongoose.Schema({
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Restaurant",
+    required: true,
+    index: true
+  },
   billNumber: { type: Number, required: true, unique: true },
   username: { type: String, required: true },
+  restaurantname: { type: String, required: true },
+  restaurantaddress: { type: String, required: true },
+  restaurantphone: { type: String, required: true },
+   panNo: { type: String, required: true },
+   regNo: { type: String, required: true },
   items: [
     {
-      name: { type: String, required: true },
-      quantity: { type: Number, required: true },
-      rate: { type: Number, required: true },
-      amount: { type: Number, required: true },
-      modifiers: [{ type: String }]
+      name: String,
+      quantity: Number,
+      rate: Number,
+      amount: Number,
+      modifiers: [String]
     }
   ],
-  tableNumber: { type: Number },
+  tableNumber: Number,
   orderType: {
     type: String,
-    enum: ["DINE_IN", "TAKEAWAY", "DELIVERY"], // Add all allowed values
+    enum: ["DINE_IN", "TAKEAWAY", "DELIVERY"],
     required: true
   },
   paymentMethod: {
     type: String,
-    enum: ["CASH", "CARD", "KHALTI", "ESEWA"], // Add all allowed payment methods
+    enum: ["CASH", "CARD", "KHALTI", "ESEWA"],
     required: true
   },
-  subtotal: { type: Number, required: true },
+  subtotal: Number,
   discountAmount: { type: Number, default: 0 },
-  vatPercent: { type: Number, default: 0 },
-  vatAmount: { type: Number, default: 13 },
+  vatPercent: { type: Number, default: 13 },
+  vatAmount: { type: Number, default: 0 },
   serviceChargePercent: { type: Number, default: 0 },
   serviceChargeAmount: { type: Number, default: 0 },
-  totalAmount: { type: Number, required: true },
-  paidAmount: { type: Number, default: 0 },
-  returnAmount: { type: Number, default: 0 },
-   status: {
+  totalAmount: Number,
+  paidAmount: Number,
+  returnAmount: Number,
+  status: {
     type: String,
-    enum: ["unpaid", "pending", "completed", "paid"], // add "paid"
-    default: "unpaid"
+    enum: ["paid"],
+    default: "paid"
   },
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("Bill", billSchema);
+
+const Bill = mongoose.models.Bill || mongoose.model("Bill", billSchema)
+export default Bill;
+

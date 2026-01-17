@@ -1,3 +1,4 @@
+// backend/src/config/database.js
 import mongoose from "mongoose";
 import config from "./config.js";
 

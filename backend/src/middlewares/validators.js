@@ -1,3 +1,4 @@
+// backend/src/middlewares/validators.js
 import z, { ZodError } from "zod";
 
 const validate = (schema) => (req, res, next) => {

@@ -1,4 +1,4 @@
-// services/billCalculator.js
+//backend/src/services/billCalculator.js
 export function calculateBill(items, vatPercent, serviceChargePercent, discountPercent) {
   let subtotal = 0;
 

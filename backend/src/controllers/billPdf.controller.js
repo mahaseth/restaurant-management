@@ -1,8 +1,15 @@
+// backend/src/controllers/billPdf.controller.js
 import Bill from "../models/Bill.js";
 import generateBillPDF from "../utils/generateBillPDF.js";
 
 export const generateBillPDFById = async (req, res) => {
-  const bill = await Bill.findById(req.params.id);
+  const bill = await Bill.findById(req.params.id)
+  .populate("restaurantId")
+  generateBillPDF({
+  ...bill.toObject(),
+  restaurant: bill.restaurantId
+})
+
   if (!bill) return res.status(404).json({ error: "Bill not found" });
 
   const pdfDoc = generateBillPDF({

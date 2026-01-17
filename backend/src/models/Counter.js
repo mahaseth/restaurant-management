@@ -1,3 +1,4 @@
+//backend/src/models/Counter.js
 import mongoose from 'mongoose';
 
 const counterSchema = new mongoose.Schema({

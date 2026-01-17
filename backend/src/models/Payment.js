@@ -1,30 +1,42 @@
-import Bill from "../models/Bill.js";
-import Payment from "../models/Payment.js";
+import mongoose from "mongoose";
 
-export const payBill = async (req, res) => {
-  const { amount, method, receivedBy } = req.body;
+const paymentSchema = new mongoose.Schema({
+  billId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Bill",
+    required: true
+  },
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Restaurant",
+    required: true
+  },
+  method: {
+    type: String,
+    enum: ["CASH", "ESEWA", "KHALTI", "CARD"],
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  providerRef: String,
+  status: {
+    type: String,
+    enum: ["SUCCESS", "FAILED"],
+    required: true
+  },
+  paidAt: {
+    type: Date,
+    default: Date.now
+  },
+  expiresAt: {
+  type: Date,
+  required: true,
 
-  const bill = await Bill.findById(req.params.id);
-  if (!bill) return res.status(404).json({ error: "Bill not found" });
-
-  if (bill.balanceAmount <= 0) {
-    return res.status(400).json({ error: "Bill already paid" });
   }
 
-  await Payment.create({
-    billId: bill._id,
-    amount,
-    method,
-    receivedBy
-  });
+  
+});
 
-  bill.paidAmount += amount;
-  bill.returnAmount = bill.totalAmount - bill.paidAmount;
-
-  if (bill.returnAmount === 0) bill.status = "paid";
-  else bill.status = "partial";
-
-  await bill.save();
-
-  res.json(bill);
-};
+export default mongoose.model("Payment", paymentSchema);

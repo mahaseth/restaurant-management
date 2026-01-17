@@ -1,3 +1,4 @@
+// backend/src/services/user.service.js
 import User from "../models/User.js";
 import uploadFile from "../utils/fileUploader.js";
 

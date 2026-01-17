@@ -1,4 +1,4 @@
-// File: src/utils/generateKitchenPDF.js
+//backend/src/utils/generateKitchenPDF.js
 import pdfMake from 'pdfmake';
 
 const fonts = {
@@ -18,6 +18,8 @@ function generateKitchenPDF(billData) {
     tableNumber = "N/A",
     orderType = "N/A",
     username = "Admin",
+    restaurantname = "RESTRO X KITCHEN",
+    restaurantaddress = "Kathmandu, Nepal",
     createdAt = new Date(),
     billNumber = "N/A",
     customerName = "",
@@ -91,7 +93,7 @@ function generateKitchenPDF(billData) {
     content: [
       // Restaurant Header
       { 
-        text: 'RESTRO X KITCHEN', 
+        text: `${restaurantname}`, 
         style: 'restaurantHeader',
         alignment: 'center' 
       },

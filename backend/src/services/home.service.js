@@ -1,3 +1,4 @@
+// backend/src/services/home.service.js
 import config from "../config/config.js";
 const getApplicationInfo = () => {
   return {

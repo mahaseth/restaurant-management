@@ -1,11 +1,19 @@
+// backend/src/models/Restaurant.js
 import mongoose from "mongoose";
+import { int } from "zod";
 
 const restaurantSchema = mongoose.Schema({
-  name: {
+  res_name: {
+    type: String,
+    required: true,
+   
+  },
+  phoneNo:{
     type: String,
     required: true,
     trim: true,
   },
+  
   address: {
     city: {
       type: String,
@@ -19,11 +27,22 @@ const restaurantSchema = mongoose.Schema({
     country: {
       type: String,
       default: "Nepal",
+      required: true,
     },
-    pan: {
-      type: String,
-      required: [true, "PAN is required."],
-    },
+  
+   
+  },
+  
+      panNo: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  
+  regNo: {
+    type: String,
+    trim: true,
+    default: ""
   },
   subscriptionPlan: {
     type: String,

@@ -1,3 +1,4 @@
+//backend/src/middlewares/roleBasedAuth.js
 // roleBasedAuth(role) -> returns middleware that allows access
 // only if `req.user.roles` includes the required role.
 const roleBasedAuth = (requiredRoles) => {

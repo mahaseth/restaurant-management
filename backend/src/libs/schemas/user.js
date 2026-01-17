@@ -1,3 +1,4 @@
+// backend/src/libs/schemas/user.js
 import z from "zod";
 import { ROLE_ADMIN, ROLE_CASHER, ROLE_WAITER, ROLE_KITCHEN, ROLE_CUSTOMER, ROLE_OWNER } from "../../constants/roles.js";
 

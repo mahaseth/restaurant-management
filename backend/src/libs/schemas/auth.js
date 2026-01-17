@@ -1,3 +1,4 @@
+// backend/src/libs/schemas/auth.js
 import z from "zod";
 import { userSchema } from "./user.js";
 import { addressSchema } from "./address.js";
@@ -11,6 +12,7 @@ const registerSchema = z.object({
     restaurant: z.object({
         name: z.string({error: "Restaurant name is required"}),
         address: addressSchema
+        
     }),
     owner: userSchema
 });

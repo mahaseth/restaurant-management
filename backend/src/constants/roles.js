@@ -1,3 +1,4 @@
+// backend/src/constants/roles.js
 export const ROLE_ADMIN = "ADMIN";
 export const ROLE_OWNER = "OWNER";
 export const ROLE_CASHER = "CASHER";

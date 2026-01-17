@@ -1,3 +1,4 @@
+// backend/src/controllers/kitchenPdf.controller.js
 import generateKitchenPDF from "../utils/generateKitchenPDF.js";
 import Bill from "../models/Bill.js";
 

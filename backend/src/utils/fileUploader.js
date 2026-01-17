@@ -1,3 +1,4 @@
+// backend/src/utils/fileUploader.js
 import { v2 as cloudinary } from "cloudinary";
 
 const CLOUDINARY_FOLDER = "restaurant-management";

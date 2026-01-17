@@ -1,3 +1,4 @@
+// backend/src/utils/generateBillPDF.js
 import pdfMake from 'pdfmake';
 
 const fonts = {
@@ -24,7 +25,10 @@ function generateBillPDF(billData) {
     returnAmount = 0,
     paymentMethod = "CASH",
     username = "Admin",
-    panNo = "",
+    restaurantname ,
+    restaurantaddress ,
+    restaurantphone,
+    panNo = "12345",
     regNo = "",
     billNumber = 0,
     createdAt = new Date()
@@ -63,9 +67,11 @@ function generateBillPDF(billData) {
     pageSize: { width: PAPER_WIDTH, height: 'auto' },
     pageMargins: PAPER_MARGINS,
     content: [
-      { text: 'RESTRO X', style: 'restaurantName' },
-      { text: 'Kathmandu, Nepal', style: 'restaurantAddress' },
+      { text: `${restaurantname}`, style: 'restaurantName' },
+      { text: `${restaurantaddress}`, style: 'restaurantAddress' },
+      { text: `Phone: ${restaurantphone}`, style: 'restaurantInfo' },
       { text: `PAN: ${panNo}`, style: 'restaurantInfo' },
+      { text: `REG: ${regNo}`, style: 'restaurantInfo' },
       { text: '================================', style: 'separator' },
       { text: `Bill No: ${billNumber}`, style: 'billInfo' },
       { text: `Date: ${formattedDate}  Time: ${formattedTime}`, style: 'billInfo' },

@@ -1,3 +1,4 @@
+// backend/src/app.js
 import express from "express";
 import bodyParser from "body-parser";
 import config from "./config/config.js";
@@ -7,6 +8,8 @@ import authRoute from "./routes/auth.routes.js";
 import connectDB from "./config/database.js";
 import auth from "./middlewares/auth.js";
 import logger from "./middlewares/logger.js";
+import publicBillRoutes from "./routes/publicBillRoutes.js";
+import paymentRoutes from  "./routes/payment.routes.js";
 import billRoutes from "./routes/bill.routes.js";
 import menuRoutes from "./routes/menu.routes.js";
 import multer from "multer";
@@ -27,12 +30,17 @@ connectCloudinary();
 
 app.use(bodyParser.json());
 app.use(logger);
+app.set("io", io);
+
 
 app.use("/", homeRouter);
 app.use("/api/users", auth, upload.single("image"), userRoute);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/public", publicBillRoutes);
 app.use("/api/auth", authRoute);
-app.use("/api/bills", billRoutes);
+app.use("/api/bills", auth, billRoutes);
 app.use("/api/menuitems", menuRoutes);
+
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);

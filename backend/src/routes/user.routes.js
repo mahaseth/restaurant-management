@@ -1,3 +1,4 @@
+// backend/src/routes/user.routes.js
 import express from "express";
 import userController from "../controllers/user.controller.js";
 import roleBasedAuth from "../middlewares/roleBasedAuth.js";

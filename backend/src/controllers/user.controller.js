@@ -1,3 +1,4 @@
+// backend/src/controllers/user.controller.js
 import userService from "../services/user.service.js";
 
 const createUser = async (req, res) => {
