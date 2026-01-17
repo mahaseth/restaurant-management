@@ -18,7 +18,11 @@ function generateBillPDF(billData) {
     totalPaid = 0,
     username,
     panNo,
-    regNo
+    regNo,
+    billNumber = 'N/A',
+    tableNumber = 'N/A',
+    taxAmount,
+    discountAmount: providedDiscountAmount
   } = billData;
 
   // Calculate line totals
@@ -39,9 +43,9 @@ function generateBillPDF(billData) {
     ]);
   });
 
-  const vatAmount = (subtotal * vatPercent) / 100;
+  const vatAmount = taxAmount !== undefined ? taxAmount : (subtotal * vatPercent) / 100;
   const totalBeforeDiscount = subtotal + vatAmount;
-  const discountAmount = (totalBeforeDiscount * discountPercent) / 100;
+  const discountAmount = providedDiscountAmount !== undefined ? providedDiscountAmount : (totalBeforeDiscount * discountPercent) / 100;
   const finalTotal = totalBeforeDiscount - discountAmount;
   const change = totalPaid - finalTotal;
 
@@ -61,6 +65,13 @@ function generateBillPDF(billData) {
       { text: `PAN No.: ${panNo} | Reg. No.: ${regNo}`, style: 'subheader' },
       '\n',
       {
+        columns: [
+          { text: `Bill No: ${billNumber}`, style: 'info' },
+          { text: `Table No: ${tableNumber}`, style: 'info', alignment: 'right' }
+        ]
+      },
+      '\n',
+      {
         table: {
           headerRows: 1,
           widths: ['auto', '*', 'auto', 'auto', 'auto'],
@@ -76,8 +87,8 @@ function generateBillPDF(billData) {
             width: 'auto',
             stack: [
               { text: `Subtotal: Rs. ${subtotal.toFixed(2)}`, style: 'totalLine' },
-              { text: `VAT (${vatPercent}%): Rs. ${vatAmount.toFixed(2)}`, style: 'totalLine' },
-              { text: `Discount (${discountPercent}%): -Rs. ${discountAmount.toFixed(2)}`, style: 'totalLine' },
+              { text: `VAT: Rs. ${vatAmount.toFixed(2)}`, style: 'totalLine' },
+              { text: `Discount: -Rs. ${discountAmount.toFixed(2)}`, style: 'totalLine' },
               { text: `Total: Rs. ${finalTotal.toFixed(2)}`, style: 'totalLineBold' },
               { text: `Paid: Rs. ${totalPaid.toFixed(2)}`, style: 'totalLine' },
               { text: `Change: Rs. ${change >= 0 ? change.toFixed(2) : '0.00'}`, style: 'totalLine' }
@@ -100,6 +111,11 @@ function generateBillPDF(billData) {
         fontSize: 10,
         alignment: 'center',
         margin: [0, 0, 0, 15]
+      },
+      info: {
+        fontSize: 10,
+        bold: true,
+        margin: [0, 5, 0, 5]
       },
       tableHeader: {
         bold: true,
