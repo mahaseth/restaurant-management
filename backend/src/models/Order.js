@@ -64,10 +64,16 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: {
-      values: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'SERVED', 'CANCELLED'],
+      values: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'SERVED', 'CANCELLED', 'BILLED'],
       message: '{VALUE} is not a valid status'
     },
     default: 'PENDING',
+    index: true
+  },
+  // Link to Bill
+  billId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Bill',
     index: true
   },
   // Totals (calculated server-side)
