@@ -7,7 +7,7 @@ import {
   deleteTable
 } from '../controllers/table.controller.js';
 import roleBasedAuth from '../middlewares/roleBasedAuth.js';
-import { ROLE_OWNER, ROLE_ADMIN } from '../constants/roles.js';
+import { ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER } from '../constants/roles.js';
 
 const router = express.Router();
 
@@ -16,9 +16,9 @@ const router = express.Router();
 router.get('/', getAllTables);
 router.get('/:id', getTable);
 
-// Mutation ops - Owner and Admin only
-router.post('/', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN]), createTable);
-router.put('/:id', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN]), updateTable);
-router.delete('/:id', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN]), deleteTable);
+// Mutation ops - Owner, Admin and Manager only
+router.post('/', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), createTable);
+router.put('/:id', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), updateTable);
+router.delete('/:id', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), deleteTable);
 
 export default router;

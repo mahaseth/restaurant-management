@@ -8,7 +8,7 @@ import {
 } from '../controllers/menu.controller.js';
 import auth from '../middlewares/auth.js';
 import roleBasedAuth from '../middlewares/roleBasedAuth.js';
-import { ROLE_OWNER, ROLE_ADMIN } from '../constants/roles.js';
+import { ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER } from '../constants/roles.js';
 
 const router = express.Router();
 
@@ -17,9 +17,9 @@ const router = express.Router();
 router.get('/', auth, getAllMenuItems);
 router.get('/:id', auth, getMenuItem);
 
-// Mutation routes - only OWNER and ADMIN can modify
-router.post('/', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN]), createMenuItem);
-router.put('/:id', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN]), updateMenuItem);
-router.delete('/:id', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN]), deleteMenuItem);
+// Mutation routes - only OWNER, ADMIN and MANAGER can modify
+router.post('/', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), createMenuItem);
+router.put('/:id', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), updateMenuItem);
+router.delete('/:id', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), deleteMenuItem);
 
 export default router;

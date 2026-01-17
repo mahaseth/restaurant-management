@@ -7,9 +7,11 @@ Detailed documentation for each API module.
 - [Authentication API](auth.md) - Login, Registration, Password Reset.
 - [User Management API](user.md) - User listing and profile management.
 - [Table Management API](table.md) - Table creation, updates, and QR code mapping.
+- [Restaurant Settings API](restaurant.md) - PAN/Registration management.
 - [Menu Management API](menu.md) - Menu items CRUD.
 - [Order Management API](order.md) - Customer ordering and staff management.
 - [Bill Management API](bill.md) - Billing, Payments, and PDF Receipts.
+- [Home/Public APIs](home.md) - General status and home info.
 
 ---
 

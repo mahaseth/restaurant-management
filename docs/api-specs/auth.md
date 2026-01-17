@@ -52,7 +52,9 @@ Base URL: `{{baseURL}}/api/auth`
       "city": "Kathmandu",
       "province": "Bagmati",
       "street": "Thamel"
-    }
+    },
+    "panNumber": "123456789",
+    "registrationNumber": "REG-001"
   },
   "owner": {
     "name": "Owner Name",

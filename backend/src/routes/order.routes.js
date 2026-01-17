@@ -28,10 +28,20 @@ router.patch('/:orderId/cancel', cancelOrderCustomer);
  * PRIVATE Endpoints (Staff - Requires Auth)
  */
 
-// Update order status (Staff can cancel anytime with reason)
-router.patch('/staff/:orderId/status', auth, updateOrderStatus);
+import { 
+  ROLE_OWNER, 
+  ROLE_ADMIN, 
+  ROLE_MANAGER, 
+  ROLE_CASHIER, 
+  ROLE_WAITER,
+  ROLE_KITCHEN
+} from '../constants/roles.js';
+import roleBasedAuth from '../middlewares/roleBasedAuth.js';
 
-// Edit order items (Staff only, while PENDING)
-router.patch('/staff/:orderId/items', auth, editOrderItems);
+// Update order status (All Staff)
+router.patch('/staff/:orderId/status', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER, ROLE_KITCHEN]), updateOrderStatus);
+
+// Edit order items (All Staff except Kitchen - as they just read the items)
+router.patch('/staff/:orderId/items', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER]), editOrderItems);
 
 export default router;
