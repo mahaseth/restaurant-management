@@ -116,6 +116,69 @@
 					"response": []
 				},
 				{
+					"name": "Create staff user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Waiter Staff\",\r\n  \"email\": \"waiter@example.com\",\r\n  \"password\": \"waiter\",\r\n  \"phone\": \"98XXXXXXXX\",\r\n  \"roles\": [\"WAITER\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Update staff by userID",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Updated to Casher\",\r\n  \"roles\": [\"CASHIER\"],\r\n  \"email\": \"cashier@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/users/696b43bae4e63215d5e20986"
+					},
+					"response": []
+				},
+				{
+					"name": "Change password by self",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Updated to Casher\",\r\n  \"roles\": [\"CASHIER\"],\r\n  \"email\": \"cashier@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/users/change-password"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete staff by userID",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseURL}}/api/users/696b43bae4e63215d5e20986"
+					},
+					"response": []
+				},
+				{
 					"name": "upload profile image",
 					"request": {
 						"method": "PATCH",

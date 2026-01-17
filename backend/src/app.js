@@ -13,6 +13,7 @@ import billRoutes from "./routes/bill.routes.js";
 import menuRoutes from "./routes/menu.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import tableRoutes from "./routes/table.routes.js";
+import restaurantRoutes from "./routes/restaurant.routes.js";
 import multer from "multer";
 import connectCloudinary from "./config/cloudinary.js";
 
@@ -32,6 +33,7 @@ app.use('/api/bill', billRoutes);
 app.use('/api/menuitems', menuRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api/tables', auth, tableRoutes);
+app.use('/api/restaurant', auth, restaurantRoutes);
 
 app.listen(config.port, () => {
   console.log(`Server is running at port: ${config.port}...`);

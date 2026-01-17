@@ -26,6 +26,14 @@ const restaurantSchema = mongoose.Schema({
     enum: ["ACTIVE", "SUSPENDED"],
     default: "ACTIVE",
   },
+  panNumber: {
+    type: String,
+    trim: true,
+  },
+  registrationNumber: {
+    type: String,
+    trim: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now(),

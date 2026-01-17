@@ -71,6 +71,8 @@ const register = async (data) => {
     email: data?.owner?.email,
     phone: data?.owner?.phone,
     address: data?.restaurant?.address,
+    panNumber: data?.restaurant?.panNumber,
+    registrationNumber: data?.restaurant?.registrationNumber,
   });
 
   const salt = bcrypt.genSaltSync(10);

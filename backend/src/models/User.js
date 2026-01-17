@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
   roles: {
     type: [String],
     default: ["OWNER"],
-    enum: ["CASHER", "OWNER", "ADMIN", "WAITER", "KITCHEN", "CUSTOMER"],
+    enum: ["CASHIER", "OWNER", "ADMIN", "WAITER", "KITCHEN", "CUSTOMER", "MANAGER"],
   },
   profileImageUrl: String,
   isActive: {
