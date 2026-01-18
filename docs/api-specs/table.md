@@ -23,7 +23,7 @@ Base URL: `{{baseURL}}/api/tables`
 ### 2. Create Table
 **Endpoint:** `POST /`
 **Description:** Creates a new table.
-**Roles:** `OWNER`, `ADMIN`
+**Roles:** `OWNER`, `ADMIN`, `MANAGER`
 
 **Request Payload:**
 ```json
@@ -34,6 +34,8 @@ Base URL: `{{baseURL}}/api/tables`
 }
 ```
 
+**Note:** The `qrCode` field is **automatically generated** as a Base64 data URL upon creation.
+
 **Response (201 Created):**
 ```json
 {
@@ -42,6 +44,7 @@ Base URL: `{{baseURL}}/api/tables`
   "capacity": 2,
   "status": "ACTIVE",
   "restaurantId": "695d3a82901b14accff0bcde",
+  "qrCode": "data:image/png;base64,...",
   "createdAt": "..."
 }
 ```

@@ -1,4 +1,5 @@
 import Table from '../models/Table.js';
+import { generateTableQRCode } from '../utils/qrCode.js';
 
 /**
  * @desc Create a new table
@@ -6,7 +7,7 @@ import Table from '../models/Table.js';
  */
 export const createTable = async (req, res) => {
   try {
-    const { tableNumber, capacity, status, qrCode } = req.body;
+    const { tableNumber, capacity, status } = req.body;
     const restaurantId = req.restaurant._id;
 
     // Check if table number already exists for this restaurant
@@ -19,9 +20,12 @@ export const createTable = async (req, res) => {
       tableNumber,
       restaurantId,
       capacity,
-      status,
-      qrCode
+      status
     });
+
+    // Generate QR code using the new table's ID
+    const qrCode = await generateTableQRCode(table._id, restaurantId);
+    table.qrCode = qrCode;
 
     await table.save();
     res.status(201).json(table);

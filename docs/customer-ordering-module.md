@@ -26,15 +26,15 @@ The Customer Ordering Module enables **contactless, self-service ordering** for 
 ### Public Access Logic (No Login Required)
 
 #### QR Link Validation
-Each table has a unique QR code that encodes a URL in the format:
+Each table has a unique QR code that is **automatically generated** by the backend upon table creation. It encodes a URL in the format:
 ```
-https://yourrestaurant.com/order?tableId=<UNIQUE_TABLE_ID>
+{{FRONTEND_URL}}/order?tableId=<UNIQUE_TABLE_ID>&restaurantId=<RESTAURANT_ID>
 ```
 
 **Validation Flow:**
 1. Customer scans QR code → Browser opens the URL
-2. Frontend extracts `tableId` from query parameter
-3. Backend validates `tableId` exists in the database
+2. Frontend extracts `tableId` and `restaurantId` from query parameters
+3. Backend validates table exists and belongs to the restaurant
 4. If valid → Display menu and allow ordering
 5. If invalid → Show error message "Invalid table"
 
@@ -91,9 +91,10 @@ https://yourrestaurant.com/order?tableId=<UNIQUE_TABLE_ID>
    - Table 2 → `tableId: 507f1f77bcf86cd799439012`
    - etc.
 
-2. **QR Code Generation**: Each table gets a unique QR code
-   - QR code encodes: `https://yourrestaurant.com/order?tableId=507f1f77bcf86cd799439011`
-   - Printed and placed on physical table
+2. **QR Code Generation**: 
+   - Each table's QR code is **automatically generated** as a Base64 image when the table is created via the API.
+   - The QR encodes: `{{FRONTEND_URL}}/order?tableId=<ID>&restaurantId=<ID>`
+   - Staff can retrieve this image from the dashboard and print it for the physical table.
 
 3. **Customer Scan**: `tableId` extracted from URL query parameter
 
