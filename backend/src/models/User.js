@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+  restaurantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Restaurant",
+    required: true,
+    index: true
+  },
   name: {
     type: String,
     required: [true, "User name is required."],
@@ -31,21 +37,6 @@ const userSchema = new mongoose.Schema({
     minLength: [6, "Invalid phone number."],
     maxLength: [13, "Invalid phone number."],
   },
-  address: {
-    city: {
-      type: String,
-      required: [true, "Address city is required."],
-    },
-    province: {
-      type: String,
-      required: [true, "Address province is required."],
-    },
-    street: String,
-    country: {
-      type: String,
-      default: "Nepal",
-    },
-  },
   createdAt: {
     type: Date,
     default: Date.now(),
@@ -53,8 +44,8 @@ const userSchema = new mongoose.Schema({
   },
   roles: {
     type: [String],
-    default: ["USER"],
-    enum: ["USER", "MERCHANT", "ADMIN"],
+    default: ["OWNER"],
+    enum: ["CASHIER", "OWNER", "ADMIN", "WAITER", "KITCHEN", "CUSTOMER", "MANAGER"],
   },
   profileImageUrl: String,
   isActive: {

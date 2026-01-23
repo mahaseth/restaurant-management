@@ -8,6 +8,12 @@ A simple restaurant management system (backend + design). This repository contai
 - Node.js (>=18 LTS) and `npm`
 - MongoDB (local or remote instance)
 
+## Libary used
+- zod : for validation of json data
+- cloudinary : used for storing files in bucket
+- multer : for supporting form data with files.
+- resend : for sending mail.
+
 ## Backend — Run locally
 
 1. Open a terminal and change to the backend folder:
@@ -41,6 +47,11 @@ Start your MongoDB server however you normally do on your OS — for example run
 ```bash
 # Run MongoDB directly (if installed locally)
 mongod --config /usr/local/etc/mongod.conf
+```
+
+For running mongo in docker can use bellow command"
+```
+docker run -d --name mongodb -p 27017:27017 -v mongodb_data:/data/db mongo:latest
 ```
 
 5. Run the backend in development mode (uses `nodemon`):

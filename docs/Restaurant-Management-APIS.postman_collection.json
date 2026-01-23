@@ -1,0 +1,518 @@
+{
+	"info": {
+		"_postman_id": "b41191be-d4c8-42cd-bd99-fa9cb8b524c8",
+		"name": "Restaurant-Management-APIS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "4299206"
+	},
+	"item": [
+		{
+			"name": "Auth (Login and Logout) API",
+			"item": [
+				{
+					"name": "Login user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"yogeshmahaseth07@gmail.com\",\r\n  \"password\": \"yogesh@12345\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/auth/login"
+					},
+					"response": []
+				},
+				{
+					"name": "Forget password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"yogeshmahaseth07@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/auth/forget-password"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"password\": \"yogesh@12345\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/auth/reset-password?userId=695d3a82901b14accff0bce0&token=0e804655-bce6-4e27-9800-04ce7f3fecca",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"reset-password"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "695d3a82901b14accff0bce0"
+								},
+								{
+									"key": "token",
+									"value": "0e804655-bce6-4e27-9800-04ce7f3fecca"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register Restaurant",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"restaurant\": {\r\n        \"name\": \"Hamro cafe 2\",\r\n        \"address\": {\r\n                \"city\": \"Kathmandu\",\r\n                \"province\": \"Bagmati\",\r\n                \"street\": \"New Road\"\r\n            }\r\n    },\r\n    \"owner\" : {\r\n        \"name\": \"Yogesh Mahaseth\",\r\n        \"email\": \"yogeshmahaseth07@gmail.com\",\r\n        \"password\": \"Yogesh@123\",\r\n        \"phone\": \"9812345679999\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/auth/register-restaurant"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users API",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Create staff user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Waiter Staff\",\r\n  \"email\": \"waiter@example.com\",\r\n  \"password\": \"waiter\",\r\n  \"phone\": \"98XXXXXXXX\",\r\n  \"roles\": [\"WAITER\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/users"
+					},
+					"response": []
+				},
+				{
+					"name": "Update staff by userID",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Updated to Casher\",\r\n  \"roles\": [\"CASHIER\"],\r\n  \"email\": \"cashier@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/users/696b43bae4e63215d5e20986"
+					},
+					"response": []
+				},
+				{
+					"name": "Change password by self",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Updated to Casher\",\r\n  \"roles\": [\"CASHIER\"],\r\n  \"email\": \"cashier@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/users/change-password"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete staff by userID",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseURL}}/api/users/696b43bae4e63215d5e20986"
+					},
+					"response": []
+				},
+				{
+					"name": "upload profile image",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": "/C:/Users/Yogesh/Downloads/IMG_6087.jpg"
+								}
+							]
+						},
+						"url": "{{baseURL}}/api/users/profile-image"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Menu API",
+			"item": [
+				{
+					"name": "get all menuitems",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/menuitems"
+					},
+					"response": []
+				},
+				{
+					"name": "create menu item",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\" : \"Spicy Pasta\",\r\n    \"description\": \"Its fill with maida and testy in nature\",\r\n    \"price\": \"200\",\r\n    \"category\": \"main\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/menuitems"
+					},
+					"response": []
+				},
+				{
+					"name": "get menu item by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/menuitems/6964ee85532369e9d806f88e"
+					},
+					"response": []
+				},
+				{
+					"name": "update menu item",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"price\": \"450\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/menuitems/6964ee85532369e9d806f88e"
+					},
+					"response": []
+				},
+				{
+					"name": "delete menu item",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": "{{baseURL}}/api/menuitems/6964ee85532369e9d806f88e"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Table API",
+			"item": [
+				{
+					"name": "create table",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tableNumber\": 3\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/tables"
+					},
+					"response": []
+				},
+				{
+					"name": "update table",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tableNumber\": 13,\r\n    \"status\": \"INACTIVE\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/tables/696a4c74867617de9b178152"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete table",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tableNumber\": 13,\r\n    \"status\": \"INACTIVE\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/tables/696a4c74867617de9b178152"
+					},
+					"response": []
+				},
+				{
+					"name": "Get  all table",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/tables"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order API",
+			"item": [
+				{
+					"name": "Create order",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tableId\": \"696a4c86867617de9b178156\",\r\n    \"restaurantId\": \"695d3a82901b14accff0bcde\",\r\n    \"items\" : [\r\n        {\r\n            \"productId\": \"6964efc422ffb8fe77edc7ea\",\r\n            \"quantity\": 2\r\n        }\r\n    ],\r\n    \"notes\": \"Add spicy\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/order"
+					},
+					"response": []
+				},
+				{
+					"name": "Get order by table id",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tableId\": \"696a4c86867617de9b178156\",\r\n    \"restaurantId\": \"695d3a82901b14accff0bcde\",\r\n    \"items\" : [\r\n        {\r\n            \"productId\": \"6964efc422ffb8fe77edc7ea\",\r\n            \"quantity\": 2\r\n        }\r\n    ],\r\n    \"notes\": \"Add spicy\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/order"
+					},
+					"response": []
+				},
+				{
+					"name": "[customer] Cancel by orderId",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tableId\": \"696a4c86867617de9b178156\",\r\n    \"restaurantId\": \"695d3a82901b14accff0bcde\",\r\n    \"items\" : [\r\n        {\r\n            \"productId\": \"6964efc422ffb8fe77edc7ea\",\r\n            \"quantity\": 2\r\n        }\r\n    ],\r\n    \"notes\": \"Add spicy\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/order/696a59ae8396ebad52b5b1b5/cancel"
+					},
+					"response": []
+				},
+				{
+					"name": "[Staff] update order status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"status\" : \"SERVED\",\r\n    \"reason\": \"cooked\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/order/staff/696a52d538ecf2e0f027dba6/status"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bill API",
+			"item": [
+				{
+					"name": "Get Bill Preview by tableId",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/bill/preview/696a4c86867617de9b178156"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Bill",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"tableId\": \"696a4c86867617de9b178156\",   // Required: The ID of the table\r\n  \"orderIds\": [           // Required: Array of SERVED order IDs to include\r\n    \"696b1d12b4bca4a8ffbf01c7\", \r\n    \"696a52d538ecf2e0f027dba6\"\r\n  ],\r\n  \"discount\": 0          // Optional: Discount amount (defaults to 0)\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/bill"
+					},
+					"response": []
+				},
+				{
+					"name": "Pay bill by billID",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"tableId\": \"696a4c86867617de9b178156\",   // Required: The ID of the table\r\n  \"orderIds\": [           // Required: Array of SERVED order IDs to include\r\n    \"696b1d12b4bca4a8ffbf01c7\", \r\n    \"696a52d538ecf2e0f027dba6\"\r\n  ],\r\n  \"discount\": 0          // Optional: Discount amount (defaults to 0)\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/bill/696b1ff41110afc8645f3ca6/pay"
+					},
+					"response": []
+				},
+				{
+					"name": "Print Bill by billID",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"tableId\": \"696a4c86867617de9b178156\",   // Required: The ID of the table\r\n  \"orderIds\": [           // Required: Array of SERVED order IDs to include\r\n    \"696b1d12b4bca4a8ffbf01c7\", \r\n    \"696a52d538ecf2e0f027dba6\"\r\n  ],\r\n  \"discount\": 0          // Optional: Discount amount (defaults to 0)\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{baseURL}}/api/bill/BILL-1768628212632-1/print"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "home",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{baseURL}}"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
