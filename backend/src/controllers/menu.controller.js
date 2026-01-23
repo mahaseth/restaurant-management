@@ -1,95 +1,83 @@
-import MenuItem from '../models/MenuItem.js';
-
+import { menuService } from '../services/menu.service.js';
 
 export const getAllMenuItems = async (req, res) => {
   try {
-    const menuItems = await MenuItem.find();
+    const filters = {
+      sort: req.query.sort,
+      min: req.query.min,
+      max: req.query.max,
+      category: req.query.category,
+      name: req.query.name,
+      available: req.query.available
+    };
+    const menuItems = await menuService.getAllItems(filters);
     res.json(menuItems);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 export const getMenuItem = async (req, res) => {
   try {
-    const menuItem = await MenuItem.findById(req.params.id);
-    
-    if (!menuItem) {
-      return res.status(404).json({ error: 'Menu item not found' });
-    } 
+    const menuItem = await menuService.getItemById(req.params.id);
     res.json(menuItem);
   } catch (error) {
+    if (error.message === 'Menu item not found') {
+      return res.status(404).json({ error: error.message });
+    }
     res.status(500).json({ error: error.message });
   }
 };
-export const updateMenuItem = async (req, res) => {
-    try {
-        const menuItem = await MenuItem.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );  
-        if (!menuItem) {
-            return res.status(404).json({ error: 'Menu item not found' });
-        }
-        res.json(menuItem);
-    } catch (error) {
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({ error: error.message });
-        }
-        res.status(500).json({ error: 'Server error updating menu item' });
-    }
-};
 
- export const createMenuItem = async (req, res) => {
+export const createMenuItem = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
-    if (!name || price === undefined || !category) {
-      return res.status(400).json({ 
-        error: 'Name, price, and category are required' 
-      });
-    }
-    
-    if (price < 0) {
-      return res.status(400).json({ 
-        error: 'Price cannot be negative' 
-      });
-    }
-    
-    const menuItem = new MenuItem({
-      name: name.trim(),
-      description: description ? description.trim() : '',
-      price,
-      category: category.toLowerCase(),
-      available: req.body.available !== false,
-      image: req.body.image || ''
-    });
-    
-    await menuItem.save();
+    const menuItem = await menuService.createItem(req.body);
     res.status(201).json(menuItem);
-    
   } catch (error) {
-    if (error.name === 'ValidationError') {
+    if (error.message.includes('required') || 
+        error.message.includes('cannot be negative')) {
       return res.status(400).json({ error: error.message });
     }
-    res.status(500).json({ error: 'Server error creating menu item' });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateMenuItem = async (req, res) => {
+  try {
+    const menuItem = await menuService.updateItem(req.params.id, req.body);
+    res.json(menuItem);
+  } catch (error) {
+    if (error.message === 'Menu item not found') {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error.message.includes('cannot be negative')) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const deleteMenuItem = async (req, res) => {
   try {
-    const menuItem = await MenuItem.findByIdAndDelete(req.params.id);
-    
-    if (!menuItem) {
-      return res.status(404).json({ error: 'Menu item not found' });
-    }
-    
+    const deletedItem = await menuService.deleteItem(req.params.id);
     res.json({ 
       success: true, 
       message: 'Menu item deleted successfully',
-      deletedItem: menuItem 
+      deletedItem 
     });
   } catch (error) {
+    if (error.message === 'Menu item not found') {
+      return res.status(404).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message });
+  }
+};
+export const getCategories = async (req, res) => {
+  try {
+    const categories = await menuService.getCategories();
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 

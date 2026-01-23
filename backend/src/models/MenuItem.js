@@ -19,7 +19,10 @@ const menuItemSchema = new mongoose.Schema({
     image: {
         type: String,
         default: ""
+    }
     },
-});
+    {
+        timestamps: true
+    });
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 export default MenuItem;

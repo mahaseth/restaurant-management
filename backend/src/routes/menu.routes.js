@@ -4,12 +4,14 @@ import {
     createMenuItem,
     getMenuItem,
     updateMenuItem,
-    deleteMenuItem
+    deleteMenuItem,
+    getCategories
 } from '../controllers/menu.controller.js';
 
 const router = express.Router();
 
 router.get('/', getAllMenuItems);
+router.get('/categories', getCategories);
 router.get('/:id', getMenuItem);
 router.put('/:id', updateMenuItem);
 router.post('/', createMenuItem);
