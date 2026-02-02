@@ -29,6 +29,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "vercel": "^50.9.6"
   }
 }
