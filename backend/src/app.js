@@ -16,25 +16,32 @@ import tableRoutes from "./routes/table.routes.js";
 import restaurantRoutes from "./routes/restaurant.routes.js";
 import multer from "multer";
 import connectCloudinary from "./config/cloudinary.js";
+import cors from "cors";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
-connectDB();
-connectCloudinary();
+try {
+  await connectDB();
+  connectCloudinary();
 
-app.use(bodyParser.json());
-app.use(logger);
+  app.use(bodyParser.json());
+  app.use(logger);
+  app.use(cors());
 
-app.use("/", homeRouter);
-app.use("/api/users", auth, upload.single("image"), userRoute);
-app.use("/api/auth", authRoute);
-app.use('/api/bill', billRoutes);
-app.use('/api/menuitems', menuRoutes);
-app.use('/api/order', orderRoutes);
-app.use('/api/tables', auth, tableRoutes);
-app.use('/api/restaurant', auth, restaurantRoutes);
+  app.use("/", homeRouter);
+  app.use("/api/users", auth, upload.single("image"), userRoute);
+  app.use("/api/auth", authRoute);
+  app.use('/api/bill', billRoutes);
+  app.use('/api/menuitems', menuRoutes);
+  app.use('/api/order', orderRoutes);
+  app.use('/api/tables', auth, tableRoutes);
+  app.use('/api/restaurant', auth, restaurantRoutes);
 
-app.listen(config.port, () => {
-  console.log(`Server is running at port: ${config.port}...`);
-});
+  app.listen(config.port, () => {
+    console.log(`Server is running at port: ${config.port}...`);
+  });
+} catch (error) {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+}

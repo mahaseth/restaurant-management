@@ -9,6 +9,7 @@ A simple restaurant management system (backend + design). This repository contai
 - MongoDB (local or remote instance)
 
 ## Libary used
+
 - zod : for validation of json data
 - cloudinary : used for storing files in bucket
 - multer : for supporting form data with files.
@@ -50,6 +51,7 @@ mongod --config /usr/local/etc/mongod.conf
 ```
 
 For running mongo in docker can use bellow command"
+
 ```
 docker run -d --name mongodb -p 27017:27017 -v mongodb_data:/data/db mongo:latest
 ```
@@ -71,3 +73,34 @@ Static UI files are in the `Design/` folder: `home.html`, `nav.html`, `sign-in.h
 - If you encounter module resolution errors with ESM, ensure local imports include the `.js` extension (the backend uses ESM via `"type": "module"` in `backend/package.json`).
 - If you want me to run the dev server and verify startup here, tell me and I'll run it.
 - The backend recommends Node.js v18 or later. An `.nvmrc` file is included in the `backend/` folder to make switching versions easy (`backend/.nvmrc`).
+
+## Frontend — Run locally
+
+1. Open a terminal and change to the frontend folder:
+
+```bash
+cd frontend
+```
+
+2. Copy the example environment file and update values as needed:
+
+Copy `.env.example` to `.env` and edit the file to set the MongoDB URI and other values. Example commands:
+
+```bash
+# macOS / Linux
+
+# Windows (Command Prompt)
+copy .env.example .env
+```
+
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Run the frontend in development mode:
+
+```bash
+npm run dev
+```

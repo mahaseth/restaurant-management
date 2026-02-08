@@ -10,15 +10,32 @@ export async function login({ email, password }) {
   return response.data;
 }
 
-export async function signUp({ city, province, name, email, phone, password }) {
+export async function signUp({
+  city,
+  province,
+  street,
+  country,
+  restaurantName,
+  ownerName,
+  email,
+  phone,
+  password,
+}) {
   const response = await axios.post(`${config.apiUrl}/api/auth/register`, {
-    name,
-    email,
-    phone,
-    password,
-    address: {
-      city,
-      province,
+    restaurant: {
+      name: restaurantName,
+      address: {
+        city,
+        province,
+        street,
+        country,
+      },
+    },
+    owner: {
+      name: ownerName,
+      email,
+      password,
+      phone,
     },
   });
 
