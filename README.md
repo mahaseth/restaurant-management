@@ -2,6 +2,11 @@
 
 A simple restaurant management system (backend + design). This repository contains a Node.js/Express backend and static design files.
 
+## Dev Environment Links
+
+- **Front end url**: https://restaurant-management-frontend-one.vercel.app/
+- **Backend url**: https://restaurant-management-brown-iota.vercel.app
+
 ## Prerequisites
 
 - Node.js (LTS recommended) and `npm`

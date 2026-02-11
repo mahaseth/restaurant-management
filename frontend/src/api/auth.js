@@ -1,8 +1,7 @@
-import config from "@/config/config";
-import axios from "axios";
+import api from "@/api";
 
 export async function login({ email, password }) {
-  const response = await axios.post(`${config.apiUrl}/api/auth/login`, {
+  const response = await api.post(`/api/auth/login`, {
     email,
     password,
   });
@@ -21,7 +20,7 @@ export async function signUp({
   phone,
   password,
 }) {
-  const response = await axios.post(`${config.apiUrl}/api/auth/register`, {
+  const response = await api.post(`/api/auth/register`, {
     restaurant: {
       name: restaurantName,
       address: {

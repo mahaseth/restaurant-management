@@ -18,3 +18,6 @@ export const DASHBOARD_ROUTE = "/dashboard";
 export const MENU_MANAGEMENT_ROUTE = "/menu-management";
 export const ORDER_MANAGEMENT_ROUTE = "/order-management";
 export const USER_MANAGEMENT_ROUTE = "/user-management";
+export const STAFF_ROUTE = "/staff";
+export const SETTINGS_ROUTE = "/settings";
+export const TABLES_ROUTE = "/tables";
