@@ -1,4 +1,5 @@
 import MenuItem from '../models/MenuItem.js';
+import uploadFile from '../utils/fileUploader.js';
 
 
 export const getAllMenuItems = async (req, res) => {
@@ -119,3 +120,14 @@ export const deleteMenuItem = async (req, res) => {
   }
 };
 
+export const uploadMenuImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+    const result = await uploadFile([req.file], '/menu-items');
+    res.json({ url: result[0].secure_url });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+};

@@ -42,3 +42,13 @@ export async function deleteMenuItem(id) {
   const response = await api.delete(`${MENU_ENDPOINT}/${id}`);
   return response.data;
 }
+
+// Upload a dish image and return the URL
+export async function uploadMenuImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await api.post(`${MENU_ENDPOINT}/upload-image`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}

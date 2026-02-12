@@ -29,45 +29,27 @@ import DeleteMenuItemDialog from "@/component/menu/DeleteMenuItemDialog";
 const CATEGORIES = {
   all: {
     label: "All Items", emoji: "🍽️",
-    gradient: "from-slate-500 to-gray-600",
-    color: "#64748b", colorEnd: "#475569",
-    glow: "rgba(100,116,139,0.35)", glowDark: "rgba(148,163,184,0.2)",
-    lightText: "text-gray-600 dark:text-gray-400",
+    gradient: "from-gray-500 to-gray-600",
   },
   appetizer: {
     label: "Appetizers", emoji: "🥗",
-    gradient: "from-amber-500 to-orange-500",
-    color: "#f59e0b", colorEnd: "#f97316",
-    glow: "rgba(245,158,11,0.4)", glowDark: "rgba(245,158,11,0.25)",
-    lightText: "text-amber-700 dark:text-amber-400",
+    gradient: "from-gray-500 to-gray-600",
   },
   main: {
     label: "Main Course", emoji: "🥩",
-    gradient: "from-orange-500 to-red-500",
-    color: "#f97316", colorEnd: "#ef4444",
-    glow: "rgba(249,115,22,0.4)", glowDark: "rgba(249,115,22,0.25)",
-    lightText: "text-orange-700 dark:text-orange-400",
+    gradient: "from-gray-500 to-gray-600",
   },
   dessert: {
     label: "Desserts", emoji: "🍰",
-    gradient: "from-pink-500 to-rose-500",
-    color: "#ec4899", colorEnd: "#f43f5e",
-    glow: "rgba(236,72,153,0.4)", glowDark: "rgba(236,72,153,0.25)",
-    lightText: "text-pink-700 dark:text-pink-400",
+    gradient: "from-gray-500 to-gray-600",
   },
   drink: {
     label: "Drinks", emoji: "🍹",
-    gradient: "from-blue-500 to-cyan-500",
-    color: "#3b82f6", colorEnd: "#06b6d4",
-    glow: "rgba(59,130,246,0.4)", glowDark: "rgba(59,130,246,0.25)",
-    lightText: "text-blue-700 dark:text-blue-400",
+    gradient: "from-gray-500 to-gray-600",
   },
   side: {
     label: "Sides", emoji: "🍟",
-    gradient: "from-emerald-500 to-teal-500",
-    color: "#10b981", colorEnd: "#14b8a6",
-    glow: "rgba(16,185,129,0.4)", glowDark: "rgba(16,185,129,0.25)",
-    lightText: "text-emerald-700 dark:text-emerald-400",
+    gradient: "from-gray-500 to-gray-600",
   },
 };
 
@@ -115,7 +97,7 @@ const TiltCard = ({ children, className = "", style = {} }) => {
         className="menu-tilt-shine"
         style={{
           opacity: isHovering ? 1 : 0,
-          background: `radial-gradient(circle at ${(tilt.y / 12 + 0.5) * 100}% ${(-tilt.x / 12 + 0.5) * 100}%, rgba(34,211,238,0.1) 0%, rgba(255,255,255,0.08) 30%, transparent 60%)`,
+          background: `radial-gradient(circle at ${(tilt.y / 12 + 0.5) * 100}% ${(-tilt.x / 12 + 0.5) * 100}%, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0.06) 30%, transparent 60%)`,
         }}
       />
     </div>
@@ -206,18 +188,18 @@ const MenuManagementPage = () => {
     ? (menuItems.reduce((s, i) => s + (i.price || 0), 0) / totalItems).toFixed(2) : "0.00";
 
   const summaryCards = [
-    { label: "Total Dishes", value: totalItems, icon: "pi pi-book", emoji: "📋",
-      gradient: "from-sky-500 to-cyan-600", glow: "rgba(14,165,233,0.35)",
-      accent: "border-l-sky-500" },
-    { label: "Available", value: availableItems, icon: "pi pi-check-circle", emoji: "✅",
-      gradient: "from-emerald-500 to-teal-600", glow: "rgba(16,185,129,0.35)",
-      accent: "border-l-emerald-500" },
-    { label: "Unavailable", value: unavailableItems, icon: "pi pi-times-circle", emoji: "⏸️",
-      gradient: "from-red-500 to-rose-600", glow: "rgba(239,68,68,0.35)",
-      accent: "border-l-red-500" },
-    { label: "Avg. Price", value: `$${avgPrice}`, icon: "pi pi-dollar", emoji: "💰",
-      gradient: "from-cyan-500 to-teal-500", glow: "rgba(6,182,212,0.35)",
-      accent: "border-l-cyan-500" },
+    { label: "Total Dishes", value: totalItems, icon: "pi pi-book",
+      accent: "border-l-slate-400 dark:border-l-slate-500",
+      iconBg: "bg-slate-100 dark:bg-slate-800/60", iconColor: "text-slate-500 dark:text-slate-400" },
+    { label: "Available", value: availableItems, icon: "pi pi-check-circle",
+      accent: "border-l-stone-400 dark:border-l-stone-500",
+      iconBg: "bg-stone-100 dark:bg-stone-800/60", iconColor: "text-stone-500 dark:text-stone-400" },
+    { label: "Unavailable", value: unavailableItems, icon: "pi pi-times-circle",
+      accent: "border-l-zinc-400 dark:border-l-zinc-500",
+      iconBg: "bg-zinc-100 dark:bg-zinc-800/60", iconColor: "text-zinc-500 dark:text-zinc-400" },
+    { label: "Avg. Price", value: `$${avgPrice}`, icon: "pi pi-dollar",
+      accent: "border-l-neutral-400 dark:border-l-neutral-500",
+      iconBg: "bg-neutral-100 dark:bg-neutral-800/60", iconColor: "text-neutral-500 dark:text-neutral-400" },
   ];
 
   // ---- Skeletons ----
@@ -268,7 +250,7 @@ const MenuManagementPage = () => {
       {/* 3D floating plate */}
       <div className="relative z-10">
         <div className="menu-3d-icon-wrapper">
-          <div className="menu-3d-icon bg-gradient-to-br from-sky-500 to-cyan-600">
+          <div className="menu-3d-icon bg-stone-50 dark:bg-stone-900/60">
             <span className="text-4xl">🍽️</span>
           </div>
           <div className="menu-3d-icon-shadow" />
@@ -288,7 +270,7 @@ const MenuManagementPage = () => {
 
       {!search && activeCategory === "all" && (
         <Button label="Add First Dish" icon="pi pi-plus" onClick={openAddDialog} raised
-          className="mt-2 relative z-10 shadow-lg shadow-sky-500/25" />
+          className="mt-2 relative z-10" />
       )}
     </div>
   );
@@ -315,16 +297,15 @@ const MenuManagementPage = () => {
             ) : (
               /* Animated gradient mesh placeholder */
               <div className="w-full h-full menu-placeholder-bg relative">
-                <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-[0.06]
-                                dark:opacity-[0.12]`} />
                 <div className="menu-deco-lines" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="menu-3d-float">
-                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${cat.gradient}
+                    <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/30
+                                    border border-blue-200 dark:border-blue-800/50
                                     flex items-center justify-center
-                                    rotate-6 group-hover:rotate-0 transition-all duration-500`}
-                         style={{ boxShadow: `0 12px 40px ${cat.glow}, inset 0 -3px 6px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.2)` }}>
-                      <span className="text-3xl">{cat.emoji}</span>
+                                    rotate-6 group-hover:rotate-0 transition-all duration-500"
+                         style={{ boxShadow: '0 8px 24px rgba(59,130,246,0.1)' }}>
+                      <span className="text-2xl">{cat.emoji}</span>
                     </div>
                   </div>
                 </div>
@@ -366,25 +347,29 @@ const MenuManagementPage = () => {
           <div className="px-4 pb-4 pt-3.5 flex flex-col gap-2 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-bold text-gray-900 dark:text-white text-[15px] leading-snug
-                             line-clamp-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400
-                             transition-colors duration-300">
+                             line-clamp-1 transition-colors duration-300">
                 {item.name}
               </h3>
-              <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100
-                              transition-opacity duration-200">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <button onClick={() => openEditDialog(item)}
-                  className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400
-                             hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30
+                  className="w-7 h-7 rounded-lg flex items-center justify-center
+                             bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400
+                             border border-blue-200 dark:border-blue-800/50
+                             hover:bg-blue-100 dark:hover:bg-blue-800/40 hover:text-blue-700 dark:hover:text-blue-300
+                             hover:border-blue-300 dark:hover:border-blue-700
                              transition-all duration-150 cursor-pointer"
                   title="Edit">
-                  <i className="pi pi-pencil" style={{ fontSize: "0.7rem" }} />
+                  <i className="pi pi-pencil" style={{ fontSize: "0.65rem" }} />
                 </button>
                 <button onClick={() => openDeleteDialog(item)}
-                  className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400
-                             hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30
+                  className="w-7 h-7 rounded-lg flex items-center justify-center
+                             bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-400
+                             border border-red-200 dark:border-red-800/40
+                             hover:bg-red-100 dark:hover:bg-red-800/30 hover:text-red-600 dark:hover:text-red-300
+                             hover:border-red-300 dark:hover:border-red-700
                              transition-all duration-150 cursor-pointer"
                   title="Delete">
-                  <i className="pi pi-trash" style={{ fontSize: "0.7rem" }} />
+                  <i className="pi pi-trash" style={{ fontSize: "0.65rem" }} />
                 </button>
               </div>
             </div>
@@ -396,19 +381,20 @@ const MenuManagementPage = () => {
 
             {/* Bottom bar */}
             <div className="flex items-center justify-between mt-auto pt-3
-                            border-t border-gray-200/80 dark:border-white/8">
+                            border-t border-blue-100 dark:border-blue-900/30">
               <div className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full
                   ${item.available
-                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
-                    : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"
-                  } animate-pulse-slow`} />
+                    ? "bg-blue-500 dark:bg-blue-400"
+                    : "bg-slate-300 dark:bg-slate-600"
+                  }`} />
                 <span className={`text-[11px] font-semibold ${item.available
-                  ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                  ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}>
                   {item.available ? "In Stock" : "Sold Out"}
                 </span>
               </div>
-              <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium
+                               bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md">
                 {CATEGORIES[item.category]?.label || item.category}
               </span>
             </div>
@@ -439,7 +425,7 @@ const MenuManagementPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-4">
             <div className="menu-header-icon">
-              <div className="menu-header-icon-3d w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600
+              <div className="menu-header-icon-3d w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800/70
                               flex items-center justify-center">
                 <span className="text-lg">🍽️</span>
               </div>
@@ -454,7 +440,7 @@ const MenuManagementPage = () => {
             </div>
           </div>
           <Button label="Add Dish" icon="pi pi-plus" onClick={openAddDialog} raised
-            className="shadow-lg shadow-sky-500/20 dark:shadow-cyan-500/15 relative z-10" />
+            className="relative z-10" />
         </div>
       </div>
 
@@ -466,11 +452,10 @@ const MenuManagementPage = () => {
                             cursor-default group relative overflow-hidden animate-fade-in-up`}
                  style={{ animationDelay: `${index * 80}ms` }}>
               <div className="flex items-center gap-3 mb-3 relative z-10">
-                <div className={`menu-stat-icon w-10 h-10 rounded-lg bg-gradient-to-br ${card.gradient}
-                                flex items-center justify-center flex-shrink-0
-                                group-hover:scale-110 transition-transform duration-400`}
-                     style={{ boxShadow: `0 6px 18px ${card.glow}` }}>
-                  <span className="text-sm">{card.emoji}</span>
+                <div className={`w-9 h-9 rounded-lg ${card.iconBg}
+                                border border-gray-200/80 dark:border-gray-700/60
+                                flex items-center justify-center flex-shrink-0`}>
+                  <i className={`${card.icon} ${card.iconColor}`} style={{ fontSize: "0.85rem" }} />
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase
                               tracking-wider leading-tight">
@@ -490,7 +475,7 @@ const MenuManagementPage = () => {
         <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
           <div className="relative flex-1 sm:flex-none group">
             <i className="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm
-                          group-focus-within:text-cyan-500 transition-colors duration-200" />
+                          group-focus-within:text-gray-600 dark:group-focus-within:text-gray-300 transition-colors duration-200" />
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search dishes..."
               className="menu-search-input w-full sm:w-80 pl-10 pr-9 py-2.5 text-sm rounded-xl" />
@@ -511,7 +496,7 @@ const MenuManagementPage = () => {
 
         {filteredItems.length > 0 && (
           <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-            Showing <span className="text-cyan-600 dark:text-cyan-400 font-bold">{filteredItems.length}</span> {filteredItems.length === 1 ? "item" : "items"}
+            Showing <span className="text-gray-700 dark:text-gray-300 font-bold">{filteredItems.length}</span> {filteredItems.length === 1 ? "item" : "items"}
           </p>
         )}
       </div>
@@ -528,17 +513,13 @@ const MenuManagementPage = () => {
                          transition-all duration-300
                          ${isActive
                            ? "menu-cat-active text-white"
-                           : "menu-cat-inactive"}`}
-              style={isActive ? {
-                background: `linear-gradient(135deg, ${cat.color}, ${cat.colorEnd})`,
-                boxShadow: `0 4px 14px ${cat.glow}, 0 0 30px ${cat.glowDark}`,
-              } : {}}>
+                           : "menu-cat-inactive"}`}>
               <span className="text-sm leading-none">{cat.emoji}</span>
               <span>{cat.label}</span>
               <span className={`min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold
                                inline-flex items-center justify-center leading-none
                 ${isActive
-                  ? "bg-white/25 text-white"
+                  ? "bg-white/20 text-white"
                   : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
                 {count}
               </span>

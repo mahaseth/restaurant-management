@@ -7,6 +7,17 @@ const MainLayout = ({ children }) => {
   const { theme } = useSelector((state) => state.userPreferences);
   const { changeTheme } = useContext(PrimeReactContext);
 
+  // Apply dark class on <html> so portaled elements (dialogs, dropdowns)
+  // also inherit dark mode styles
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [theme]);
+
   useEffect(() => {
     let newTheme = theme === "dark" ? "lara-dark-blue" : "lara-light-blue";
     let prevTheme = theme === "dark" ? "lara-light-blue" : "lara-dark-blue";
