@@ -726,20 +726,19 @@ body {
     inset 0 3px 6px rgba(255, 255, 255, 0.25);
 }
 
-/* ---------- Menu item card (3D raised, bold & visible) ---------- */
+/* ---------- Menu item card (3D raised, brand blue) ---------- */
 .menu-item-card {
   background: linear-gradient(180deg, #ffffff 0%, #f0f4f8 100%);
-  border: 2.5px solid #b0bec5;
-  border-top-color: #d6dee6;
-  border-bottom-color: #78909c;
+  border: 2px solid #c7d8ed;
+  border-top-color: #dbe7f5;
+  border-bottom-color: #93b4d8;
   border-radius: 1rem;
   box-shadow:
-    /* Outer depth layers */
     0 1px 2px rgba(0, 0, 0, 0.08),
     0 4px 8px rgba(0, 0, 0, 0.07),
     0 8px 20px rgba(0, 0, 0, 0.06),
     0 16px 40px rgba(0, 0, 0, 0.05),
-    /* Inset bevel for 3D look */
+    0 0 0 1px rgba(59, 130, 246, 0.04),
     inset 0 2px 0 rgba(255, 255, 255, 0.9),
     inset 0 -2px 0 rgba(0, 0, 0, 0.04);
   transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
@@ -747,40 +746,40 @@ body {
 
 .menu-item-card:hover {
   transform: translateY(-6px) scale(1.01);
-  border-color: #7dd3fc;
+  border-color: #93bbfd;
   box-shadow:
-    0 4px 8px rgba(14, 165, 233, 0.1),
-    0 10px 24px rgba(14, 165, 233, 0.1),
+    0 4px 8px rgba(59, 130, 246, 0.12),
+    0 10px 24px rgba(59, 130, 246, 0.1),
     0 20px 50px rgba(0, 0, 0, 0.1),
-    0 30px 70px rgba(6, 182, 212, 0.06),
+    0 30px 70px rgba(59, 130, 246, 0.06),
     inset 0 2px 0 rgba(255, 255, 255, 0.95);
 }
 
 :where(.dark, .dark *) .menu-item-card {
   background: linear-gradient(180deg, #162e4e 0%, #0e2240 50%, #0b1c36 100%);
-  border-color: #1f4d80;
-  border-top-color: #2e6aaa;
+  border-color: #1e3a5f;
+  border-top-color: #2a5a8f;
   border-bottom-color: #091528;
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.4),
     0 4px 8px rgba(0, 0, 0, 0.35),
     0 8px 20px rgba(0, 0, 0, 0.3),
     0 16px 40px rgba(0, 0, 0, 0.2),
-    0 0 20px rgba(6, 182, 212, 0.03),
-    inset 0 2px 0 rgba(34, 211, 238, 0.06),
+    0 0 20px rgba(59, 130, 246, 0.04),
+    inset 0 2px 0 rgba(59, 130, 246, 0.06),
     inset 0 -2px 0 rgba(0, 0, 0, 0.15);
 }
 
 :where(.dark, .dark *) .menu-item-card:hover {
   transform: translateY(-6px) scale(1.01);
-  border-color: #22a3c4;
+  border-color: #3b82f6;
   box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.4),
-    0 10px 24px rgba(6, 182, 212, 0.08),
+    0 10px 24px rgba(59, 130, 246, 0.1),
     0 20px 50px rgba(0, 0, 0, 0.3),
-    0 30px 70px rgba(6, 182, 212, 0.05),
-    0 0 40px rgba(6, 182, 212, 0.06),
-    inset 0 2px 0 rgba(34, 211, 238, 0.08);
+    0 30px 70px rgba(59, 130, 246, 0.06),
+    0 0 40px rgba(59, 130, 246, 0.08),
+    inset 0 2px 0 rgba(96, 165, 250, 0.08);
 }
 
 /* ---------- 3D Tilt card ---------- */
@@ -1269,13 +1268,25 @@ body {
   user-select: none;
 }
 
-/* Active chip */
+/* Active chip — brand blue */
 .menu-cat-active {
+  background: linear-gradient(135deg, #3b82f6, #1e40af) !important;
   border: none;
+  color: #ffffff !important;
   box-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.15),
+    0 4px 14px rgba(59, 130, 246, 0.35),
+    0 0 30px rgba(59, 130, 246, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+:where(.dark, .dark *) .menu-cat-active {
+  background: linear-gradient(135deg, #60a5fa, #2563eb) !important;
+  box-shadow:
+    0 4px 14px rgba(96, 165, 250, 0.3),
+    0 0 30px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
 .menu-cat-active:hover {
@@ -1388,4 +1399,125 @@ body {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   background: #0f172a;
+}
+
+/* ===========================================================
+   Menu Item Form Dialog — Dark-mode safe, brand-themed
+   =========================================================== */
+
+/* Scoped dialog shell overrides */
+.dark .menu-form-dialog .p-dialog-header {
+  background: linear-gradient(to bottom, #1e293b, #1a2332) !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .menu-form-dialog .p-dialog-content {
+  background: #111827 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .menu-form-dialog .p-dialog-footer {
+  background: linear-gradient(to top, #0c1322, #111827) !important;
+  border-top: 1px solid #334155 !important;
+}
+
+/* Ensure ALL inputs inside the dialog are visible in dark mode */
+.dark .menu-form-dialog .p-inputtext,
+.dark .menu-form-dialog .p-inputnumber-input,
+.dark .menu-form-dialog .p-inputtextarea,
+.dark .menu-form-dialog .p-dropdown {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+.dark .menu-form-dialog .p-inputtext::placeholder,
+.dark .menu-form-dialog .p-inputnumber-input::placeholder,
+.dark .menu-form-dialog .p-inputtextarea::placeholder {
+  color: #6b7280 !important;
+}
+
+.dark .menu-form-dialog .p-inputtext:hover,
+.dark .menu-form-dialog .p-inputnumber-input:hover,
+.dark .menu-form-dialog .p-inputtextarea:hover,
+.dark .menu-form-dialog .p-dropdown:hover {
+  border-color: #4b5563 !important;
+}
+
+.dark .menu-form-dialog .p-inputtext:focus,
+.dark .menu-form-dialog .p-inputnumber-input:focus,
+.dark .menu-form-dialog .p-inputtextarea:focus,
+.dark .menu-form-dialog .p-dropdown.p-focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .menu-form-dialog .p-dropdown-label {
+  color: #ffffff !important;
+}
+
+.dark .menu-form-dialog .p-dropdown-trigger {
+  color: #9ca3af !important;
+}
+
+.dark .menu-form-dialog .p-dropdown-trigger svg,
+.dark .menu-form-dialog .p-dropdown-trigger .p-icon {
+  color: #9ca3af !important;
+  fill: #9ca3af !important;
+}
+
+/* InputNumber buttons in dark mode */
+.dark .p-inputnumber-button {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+.dark .p-inputnumber-button:hover {
+  background: #334155 !important;
+  color: #60a5fa !important;
+}
+
+/* Dropdown panel in dark mode */
+.dark .p-dropdown-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  color: #e2e8f0 !important;
+}
+
+.dark .p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover {
+  background-color: #172554 !important;
+}
+
+.dark .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  background: linear-gradient(135deg, #172554, #1e1b4b) !important;
+  color: #60a5fa !important;
+}
+
+/* Field group styling */
+.menu-dlg-field-group {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.dark .menu-dlg-field-group {
+  background: #1a2332 !important;
+  border-color: #2d3a4d !important;
+}
+
+/* Header accent line */
+.menu-form-dialog .p-dialog-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, #3b82f6, transparent);
+  opacity: 0.5;
 }

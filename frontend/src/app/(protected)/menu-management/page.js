@@ -28,42 +28,42 @@ import DeleteMenuItemDialog from "@/component/menu/DeleteMenuItemDialog";
 // =====================
 const CATEGORIES = {
   all: {
-    label: "All Items", emoji: "🍽️",
+    label: "All Items", icon: "pi pi-th-large",
     gradient: "from-slate-500 to-gray-600",
     color: "#64748b", colorEnd: "#475569",
     glow: "rgba(100,116,139,0.35)", glowDark: "rgba(148,163,184,0.2)",
     lightText: "text-gray-600 dark:text-gray-400",
   },
   appetizer: {
-    label: "Appetizers", emoji: "🥗",
+    label: "Appetizers", icon: "pi pi-star",
     gradient: "from-amber-500 to-orange-500",
     color: "#f59e0b", colorEnd: "#f97316",
     glow: "rgba(245,158,11,0.4)", glowDark: "rgba(245,158,11,0.25)",
     lightText: "text-amber-700 dark:text-amber-400",
   },
   main: {
-    label: "Main Course", emoji: "🥩",
+    label: "Main Course", icon: "pi pi-sun",
     gradient: "from-orange-500 to-red-500",
     color: "#f97316", colorEnd: "#ef4444",
     glow: "rgba(249,115,22,0.4)", glowDark: "rgba(249,115,22,0.25)",
     lightText: "text-orange-700 dark:text-orange-400",
   },
   dessert: {
-    label: "Desserts", emoji: "🍰",
+    label: "Desserts", icon: "pi pi-heart",
     gradient: "from-pink-500 to-rose-500",
     color: "#ec4899", colorEnd: "#f43f5e",
     glow: "rgba(236,72,153,0.4)", glowDark: "rgba(236,72,153,0.25)",
     lightText: "text-pink-700 dark:text-pink-400",
   },
   drink: {
-    label: "Drinks", emoji: "🍹",
+    label: "Drinks", icon: "pi pi-bolt",
     gradient: "from-blue-500 to-cyan-500",
     color: "#3b82f6", colorEnd: "#06b6d4",
     glow: "rgba(59,130,246,0.4)", glowDark: "rgba(59,130,246,0.25)",
     lightText: "text-blue-700 dark:text-blue-400",
   },
   side: {
-    label: "Sides", emoji: "🍟",
+    label: "Sides", icon: "pi pi-box",
     gradient: "from-emerald-500 to-teal-500",
     color: "#10b981", colorEnd: "#14b8a6",
     glow: "rgba(16,185,129,0.4)", glowDark: "rgba(16,185,129,0.25)",
@@ -115,7 +115,7 @@ const TiltCard = ({ children, className = "", style = {} }) => {
         className="menu-tilt-shine"
         style={{
           opacity: isHovering ? 1 : 0,
-          background: `radial-gradient(circle at ${(tilt.y / 12 + 0.5) * 100}% ${(-tilt.x / 12 + 0.5) * 100}%, rgba(34,211,238,0.1) 0%, rgba(255,255,255,0.08) 30%, transparent 60%)`,
+          background: `radial-gradient(circle at ${(tilt.y / 12 + 0.5) * 100}% ${(-tilt.x / 12 + 0.5) * 100}%, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0.08) 30%, transparent 60%)`,
         }}
       />
     </div>
@@ -206,17 +206,17 @@ const MenuManagementPage = () => {
     ? (menuItems.reduce((s, i) => s + (i.price || 0), 0) / totalItems).toFixed(2) : "0.00";
 
   const summaryCards = [
-    { label: "Total Dishes", value: totalItems, icon: "pi pi-book", emoji: "📋",
-      gradient: "from-sky-500 to-cyan-600", glow: "rgba(14,165,233,0.35)",
-      accent: "border-l-sky-500" },
-    { label: "Available", value: availableItems, icon: "pi pi-check-circle", emoji: "✅",
-      gradient: "from-emerald-500 to-teal-600", glow: "rgba(16,185,129,0.35)",
-      accent: "border-l-emerald-500" },
-    { label: "Unavailable", value: unavailableItems, icon: "pi pi-times-circle", emoji: "⏸️",
-      gradient: "from-red-500 to-rose-600", glow: "rgba(239,68,68,0.35)",
-      accent: "border-l-red-500" },
-    { label: "Avg. Price", value: `$${avgPrice}`, icon: "pi pi-dollar", emoji: "💰",
-      gradient: "from-cyan-500 to-teal-500", glow: "rgba(6,182,212,0.35)",
+    { label: "Total Dishes", value: totalItems, icon: "pi pi-book",
+        gradient: "from-sky-500 to-cyan-600", glow: "rgba(14,165,233,0.35)",
+        accent: "border-l-sky-500" },
+    { label: "Available", value: availableItems, icon: "pi pi-check-circle",
+        gradient: "from-emerald-500 to-teal-600", glow: "rgba(16,185,129,0.35)",
+        accent: "border-l-emerald-500" },
+    { label: "Unavailable", value: unavailableItems, icon: "pi pi-times-circle",
+        gradient: "from-red-500 to-rose-600", glow: "rgba(239,68,68,0.35)",
+        accent: "border-l-red-500" },
+    { label: "Avg. Price", value: `$${avgPrice}`, icon: "pi pi-dollar",
+        gradient: "from-cyan-500 to-teal-500", glow: "rgba(6,182,212,0.35)",
       accent: "border-l-cyan-500" },
   ];
 
@@ -260,16 +260,16 @@ const MenuManagementPage = () => {
       <div className="menu-float-orb menu-float-orb-3" />
 
       {/* Floating restaurant decor */}
-      <div className="menu-deco menu-deco-1">🍴</div>
-      <div className="menu-deco menu-deco-2">🍷</div>
-      <div className="menu-deco menu-deco-3">🧑‍🍳</div>
-      <div className="menu-deco menu-deco-4">🍕</div>
+      <div className="menu-deco menu-deco-1"><i className="pi pi-star" /></div>
+      <div className="menu-deco menu-deco-2"><i className="pi pi-heart" /></div>
+      <div className="menu-deco menu-deco-3"><i className="pi pi-bookmark" /></div>
+      <div className="menu-deco menu-deco-4"><i className="pi pi-bolt" /></div>
 
       {/* 3D floating plate */}
       <div className="relative z-10">
         <div className="menu-3d-icon-wrapper">
           <div className="menu-3d-icon bg-gradient-to-br from-sky-500 to-cyan-600">
-            <span className="text-4xl">🍽️</span>
+            <i className="pi pi-list text-white" style={{ fontSize: "1.75rem" }} />
           </div>
           <div className="menu-3d-icon-shadow" />
         </div>
@@ -324,7 +324,7 @@ const MenuManagementPage = () => {
                                     flex items-center justify-center
                                     rotate-6 group-hover:rotate-0 transition-all duration-500`}
                          style={{ boxShadow: `0 12px 40px ${cat.glow}, inset 0 -3px 6px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.2)` }}>
-                      <span className="text-3xl">{cat.emoji}</span>
+                      <i className={`${cat.icon} text-white`} style={{ fontSize: "1.5rem" }} />
                     </div>
                   </div>
                 </div>
@@ -370,21 +370,24 @@ const MenuManagementPage = () => {
                              transition-colors duration-300">
                 {item.name}
               </h3>
-              <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100
-                              transition-opacity duration-200">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <button onClick={() => openEditDialog(item)}
-                  className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400
-                             hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30
+                  className="w-7 h-7 rounded-md flex items-center justify-center
+                             bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400
+                             border border-blue-200 dark:border-blue-800/50
+                             hover:bg-blue-100 dark:hover:bg-blue-900/50
                              transition-all duration-150 cursor-pointer"
                   title="Edit">
-                  <i className="pi pi-pencil" style={{ fontSize: "0.7rem" }} />
+                  <i className="pi pi-pencil" style={{ fontSize: "0.65rem" }} />
                 </button>
                 <button onClick={() => openDeleteDialog(item)}
-                  className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400
-                             hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30
+                  className="w-7 h-7 rounded-md flex items-center justify-center
+                             bg-red-50 dark:bg-red-900/20 text-red-400 dark:text-red-400
+                             border border-red-200 dark:border-red-800/40
+                             hover:bg-red-100 dark:hover:bg-red-900/40
                              transition-all duration-150 cursor-pointer"
                   title="Delete">
-                  <i className="pi pi-trash" style={{ fontSize: "0.7rem" }} />
+                  <i className="pi pi-trash" style={{ fontSize: "0.65rem" }} />
                 </button>
               </div>
             </div>
@@ -441,7 +444,7 @@ const MenuManagementPage = () => {
             <div className="menu-header-icon">
               <div className="menu-header-icon-3d w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600
                               flex items-center justify-center">
-                <span className="text-lg">🍽️</span>
+                <i className="pi pi-list text-white" style={{ fontSize: "1rem" }} />
               </div>
             </div>
             <div>
@@ -470,14 +473,14 @@ const MenuManagementPage = () => {
                                 flex items-center justify-center flex-shrink-0
                                 group-hover:scale-110 transition-transform duration-400`}
                      style={{ boxShadow: `0 6px 18px ${card.glow}` }}>
-                  <span className="text-sm">{card.emoji}</span>
+                  <i className={`${card.icon} text-white`} style={{ fontSize: "0.85rem" }} />
                 </div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase
                               tracking-wider leading-tight">
                   {card.label}
                 </p>
               </div>
-              <p className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight relative z-10">
+              <p className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight relative z-10">
                 {card.value}
               </p>
             </div>
@@ -533,7 +536,6 @@ const MenuManagementPage = () => {
                 background: `linear-gradient(135deg, ${cat.color}, ${cat.colorEnd})`,
                 boxShadow: `0 4px 14px ${cat.glow}, 0 0 30px ${cat.glowDark}`,
               } : {}}>
-              <span className="text-sm leading-none">{cat.emoji}</span>
               <span>{cat.label}</span>
               <span className={`min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold
                                inline-flex items-center justify-center leading-none
