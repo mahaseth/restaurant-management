@@ -457,12 +457,12 @@ const MenuManagementPage = () => {
                                 flex items-center justify-center flex-shrink-0`}>
                   <i className={`${card.icon} ${card.iconColor}`} style={{ fontSize: "0.85rem" }} />
                 </div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-bold uppercase
+                <p className="text-[13px] text-gray-500 dark:text-gray-400 font-bold uppercase
                               tracking-wider leading-tight">
                   {card.label}
                 </p>
               </div>
-              <p className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight relative z-10">
+              <p className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight relative z-10">
                 {card.value}
               </p>
             </div>
