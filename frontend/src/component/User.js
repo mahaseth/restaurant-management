@@ -5,7 +5,7 @@ import {
   DASHBOARD_ROUTE,
   LOGIN_ROUTE,
   ORDERS_ROUTE,
-  PROFILE_ROUTE,
+  SETTINGS_ROUTE,
 } from "@/constants/routes";
 import { logout } from "@/redux/auth/authSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -68,7 +68,7 @@ const User = () => {
                 Orders
               </Link>
               <Link
-                href={PROFILE_ROUTE}
+                href={SETTINGS_ROUTE}
                 className="py-1 px-4 text-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-200"
               >
                 Profile

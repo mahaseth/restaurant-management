@@ -8,6 +8,12 @@ const MainLayout = ({ children }) => {
   const { changeTheme } = useContext(PrimeReactContext);
 
   useEffect(() => {
+    // PrimeReact Dialog/Overlay components can render outside the app root (portals).
+    // Toggling the class on <html> ensures dark mode styles apply everywhere.
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", theme === "dark");
+    }
+
     let newTheme = theme === "dark" ? "lara-dark-blue" : "lara-light-blue";
     let prevTheme = theme === "dark" ? "lara-light-blue" : "lara-dark-blue";
 

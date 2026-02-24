@@ -43,6 +43,7 @@ const login = async (data) => {
       phone: user.phone,
       isActive: user.isActive,
       roles: user.roles,
+      profileImageUrl: user.profileImageUrl,
     },
   };
 };
@@ -100,6 +101,7 @@ const register = async (data) => {
       phone: newUser.phone,
       isActive: newUser.isActive,
       roles: newUser.roles,
+      profileImageUrl: newUser.profileImageUrl,
     },
   };
 };
