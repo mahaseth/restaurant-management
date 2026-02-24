@@ -24,6 +24,12 @@ const tableSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // The exact URL encoded into `qrCode` (helps admins verify/regenerate correctly).
+  qrLink: {
+    type: String,
+    default: "",
+    trim: true,
+  },
   capacity: {
     type: Number,
     default: 4,

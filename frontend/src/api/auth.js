@@ -20,7 +20,8 @@ export async function signUp({
   phone,
   password,
 }) {
-  const response = await api.post(`/api/auth/register`, {
+  // Backend route is `/api/auth/register-restaurant`
+  const response = await api.post(`/api/auth/register-restaurant`, {
     restaurant: {
       name: restaurantName,
       address: {

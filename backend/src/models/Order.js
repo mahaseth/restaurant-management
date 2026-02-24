@@ -40,6 +40,15 @@ const orderItemSchema = new mongoose.Schema({
 }, { _id: false }); // No separate _id for subdocuments
 
 const orderSchema = new mongoose.Schema({
+  // Customer-visible order number (used for "existing order" flow).
+  // Example: RS-7K4P9D2A
+  orderNumber: {
+    type: String,
+    required: [true, "Order number is required"],
+    unique: true,
+    index: true,
+    trim: true,
+  },
   tableId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Table',
@@ -51,6 +60,15 @@ const orderSchema = new mongoose.Schema({
     ref: 'Restaurant',
     required: [true, 'Restaurant ID is required'],
     index: true
+  },
+  // Optional: captured from customer on QR flow start screen.
+  // Not used for auth; purely for sending updates/identification later.
+  customerEmail: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: "",
+    maxlength: [200, "Email cannot exceed 200 characters"],
   },
   items: {
     type: [orderItemSchema],
@@ -69,6 +87,16 @@ const orderSchema = new mongoose.Schema({
     },
     default: 'PENDING',
     index: true
+  },
+  // When a customer adds more items to an existing order, staff should re-confirm.
+  // This flag is a simple "notification" for the staff UI.
+  pendingAdditions: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  pendingAdditionsAt: {
+    type: Date,
   },
   // Link to Bill
   billId: {

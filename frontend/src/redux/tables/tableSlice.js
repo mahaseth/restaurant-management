@@ -3,7 +3,7 @@
 // I handle all 4 actions: fetch, add, edit, remove.
 
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchTables, addTable, editTable, removeTable } from "./tableActions";
+import { fetchTables, addTable, editTable, removeTable, regenerateQr } from "./tableActions";
 
 const tableSlice = createSlice({
   name: "tables",
@@ -74,6 +74,19 @@ const tableSlice = createSlice({
         state.tables = state.tables.filter((t) => t._id !== action.payload);
       })
       .addCase(removeTable.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      // --- Regenerate QR ---
+      .addCase(regenerateQr.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(regenerateQr.fulfilled, (state, action) => {
+        const index = state.tables.findIndex((t) => t._id === action.payload._id);
+        if (index !== -1) state.tables[index] = action.payload;
+        state.tables.sort((a, b) => a.tableNumber - b.tableNumber);
+      })
+      .addCase(regenerateQr.rejected, (state, action) => {
         state.error = action.payload;
       }),
 });

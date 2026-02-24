@@ -7,6 +7,7 @@ import {
   createTable,
   updateTable,
   deleteTable,
+  regenerateTableQr,
 } from "@/api/tables";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
@@ -71,6 +72,18 @@ export const removeTable = createAsyncThunk(
       return id;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Failed to delete table"));
+    }
+  }
+);
+
+// Regenerate QR code for a table (updates the table record)
+export const regenerateQr = createAsyncThunk(
+  "tables/regenerateQr",
+  async (id, { rejectWithValue }) => {
+    try {
+      return await regenerateTableQr(id);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to regenerate QR"));
     }
   }
 );

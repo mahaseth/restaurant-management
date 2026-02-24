@@ -1,62 +1,20 @@
-import Order from '../models/Order.js';
 import MenuItem from '../models/MenuItem.js';
+import Order from '../models/Order.js';
 import Table from '../models/Table.js';
 import mongoose from 'mongoose';
+import { generateOrderNumber, validateAndCalculateOrder } from "../utils/orderUtils.js";
 
-/**
- * Helper: Validate items and calculate totals
- */
-const validateAndCalculateOrder = async (items) => {
-  let subtotal = 0;
-  const validatedItems = [];
-
-  for (const item of items) {
-    const { productId, quantity, modifiers } = item;
-
-    if (!productId || !quantity || quantity < 1) {
-      throw new Error('Invalid product details in items');
-    }
-
-    const menuItem = await MenuItem.findById(productId);
-    if (!menuItem) {
-      throw new Error(`Menu item ${productId} not found`);
-    }
-
-    if (!menuItem.available) {
-      throw new Error(`Menu item ${menuItem.name} is currently unavailable`);
-    }
-
-    let itemPrice = menuItem.price;
-    let modifiersTotal = 0;
-    
-    if (modifiers && modifiers.length > 0) {
-      modifiersTotal = modifiers.reduce((acc, mod) => acc + (mod.price || 0), 0);
-    }
-
-    const lineTotal = (itemPrice + modifiersTotal) * quantity;
-    subtotal += lineTotal;
-
-    validatedItems.push({
-      productId,
-      name: menuItem.name,
-      unitPrice: itemPrice,
-      quantity,
-      modifiers: modifiers || [],
-      lineTotal
-    });
+async function generateUniqueOrderNumber() {
+  // Best-effort uniqueness; orderNumber has a unique index as final guard.
+  for (let i = 0; i < 10; i++) {
+    const candidate = generateOrderNumber();
+    // eslint-disable-next-line no-await-in-loop
+    const exists = await Order.exists({ orderNumber: candidate });
+    if (!exists) return candidate;
   }
-
-  const taxRate = 0.08;
-  const tax = Math.round(subtotal * taxRate * 100) / 100;
-  const total = Math.round((subtotal + tax) * 100) / 100;
-
-  return {
-    validatedItems,
-    subtotal: Math.round(subtotal * 100) / 100,
-    tax,
-    total
-  };
-};
+  // Extremely unlikely fallback
+  return `${generateOrderNumber()}-${Date.now()}`;
+}
 
 /**
  * Create a new order (Public)
@@ -64,7 +22,7 @@ const validateAndCalculateOrder = async (items) => {
  */
 export const createOrder = async (req, res) => {
   try {
-    const { tableId, restaurantId, items, notes, clientOrderId } = req.body;
+    const { tableId, restaurantId, items, notes, clientOrderId, customerEmail } = req.body;
 
     // 1. Basic validation
     if (!tableId || !restaurantId || !items || !items.length) {
@@ -77,6 +35,11 @@ export const createOrder = async (req, res) => {
       return res.status(404).json({ error: 'Table not found' });
     }
 
+    // Enforce table -> restaurant relationship for public requests
+    if (String(table.restaurantId) !== String(restaurantId)) {
+      return res.status(400).json({ error: "Table does not belong to this restaurant" });
+    }
+
     // 3. Idempotency check
     if (clientOrderId) {
       const existingOrder = await Order.findOne({ clientOrderId });
@@ -86,12 +49,17 @@ export const createOrder = async (req, res) => {
     }
 
     // 4. Validate items and compute totals server-side
-    const { validatedItems, subtotal, tax, total } = await validateAndCalculateOrder(items);
+    // Attach restaurantId to each item for validation function checks.
+    const itemsWithRestaurant = items.map((it) => ({ ...it, restaurantId }));
+    const { validatedItems, subtotal, tax, total } = await validateAndCalculateOrder(itemsWithRestaurant);
 
     // 5. Create order
+    const orderNumber = await generateUniqueOrderNumber();
     const order = new Order({
+      orderNumber,
       tableId,
       restaurantId,
+      customerEmail: customerEmail || "",
       items: validatedItems,
       subtotal,
       tax,
@@ -157,32 +125,9 @@ export const getOrdersByTable = async (req, res) => {
  */
 export const cancelOrderCustomer = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const order = await Order.findById(orderId);
-
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-
-    if (order.status !== 'PENDING') {
-      return res.status(400).json({ error: 'Only pending orders can be cancelled' });
-    }
-
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    if (order.createdAt < twoMinutesAgo) {
-      return res.status(400).json({ error: 'Cancellation window (2 minutes) has expired. Please contact staff.' });
-    }
-
-    order.status = 'CANCELLED';
-    order.statusHistory.push({
-      status: 'CANCELLED',
-      updatedBy: 'Customer',
-      reason: 'Customer cancelled'
-    });
-
-    await order.save();
-    res.json(order);
-
+    // Cancellation from the customer QR flow is intentionally disabled.
+    // Customers may only add more items to an existing order.
+    return res.status(403).json({ error: "Customer cancellation is disabled. Please contact staff." });
   } catch (error) {
     res.status(500).json({ error: 'Server error cancelling order' });
   }
@@ -210,6 +155,13 @@ export const updateOrderStatus = async (req, res) => {
 
     order.status = status;
     if (status === 'CANCELLED') order.cancelReason = reason;
+
+    // If this order had customer additions waiting, any staff status update is an acknowledgment.
+    // (Most commonly staff sets CONFIRMED again.)
+    if (order.pendingAdditions && status !== "PENDING") {
+      order.pendingAdditions = false;
+      order.pendingAdditionsAt = undefined;
+    }
 
     order.statusHistory.push({
       status,
@@ -257,10 +209,75 @@ export const editOrderItems = async (req, res) => {
     order.total = total;
     if (notes !== undefined) order.notes = notes;
 
+    // Staff edited the order; clear any pending additions flag.
+    if (order.pendingAdditions) {
+      order.pendingAdditions = false;
+      order.pendingAdditionsAt = undefined;
+    }
+
     await order.save();
     res.json(order);
 
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+/**
+ * Staff: Get recent orders for the restaurant
+ * GET /api/order/staff/recent
+ */
+export const getRecentOrdersStaff = async (req, res) => {
+  try {
+    const { status, limit = 50, tableId } = req.query;
+
+    const query = {
+      restaurantId: req.restaurant?._id,
+    };
+
+    if (status) query.status = status;
+    if (tableId) {
+      if (!mongoose.Types.ObjectId.isValid(tableId)) {
+        return res.status(400).json({ error: "Invalid table ID format" });
+      }
+      query.tableId = tableId;
+    }
+
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Math.min(parseInt(limit) || 50, 200))
+      .populate("tableId", "tableNumber")
+      .lean();
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Get Recent Orders (Staff) Error:", error);
+    res.status(500).json({ error: "Server error fetching orders" });
+  }
+};
+
+/**
+ * Staff: Get single order with details
+ * GET /api/order/staff/:orderId
+ */
+export const getOrderByIdStaff = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({ error: "Invalid order ID format" });
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      restaurantId: req.restaurant?._id,
+    })
+      .populate("tableId", "tableNumber")
+      .lean();
+
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.status(200).json(order);
+  } catch (error) {
+    console.error("Get Order (Staff) Error:", error);
+    res.status(500).json({ error: "Server error fetching order" });
   }
 };
