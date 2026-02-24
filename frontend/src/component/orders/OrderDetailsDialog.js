@@ -15,6 +15,8 @@ const STATUS_OPTIONS = [
   { label: "Confirmed", value: "CONFIRMED", icon: "pi pi-check-circle", color: "text-emerald-500" },
   { label: "In Progress", value: "IN_PROGRESS", icon: "pi pi-spinner", color: "text-blue-500" },
   { label: "Served", value: "SERVED", icon: "pi pi-verified", color: "text-indigo-500" },
+  { label: "Billed", value: "BILLED", icon: "pi pi-wallet", color: "text-slate-600 dark:text-slate-300" },
+  { label: "Closed", value: "CLOSED", icon: "pi pi-lock", color: "text-emerald-600 dark:text-emerald-300" },
   { label: "Cancelled", value: "CANCELLED", icon: "pi pi-times-circle", color: "text-red-500" },
 ];
 
@@ -38,12 +40,19 @@ const OrderDetailsDialog = ({
   canUpdateStatus,
   onUpdateStatus,
   updatingStatus,
+  onUpdatePaymentStatus,
+  updatingPayment,
 }) => {
-  const [nextStatus, setNextStatus] = useState(order?.status || "CONFIRMED");
+  const [nextStatus, setNextStatus] = useState("PENDING");
   const [reason, setReason] = useState("");
 
   // Keep dropdown template stable
   const valueTemplate = useMemo(() => statusItemTemplate, []);
+
+  const initializeUiState = () => {
+    setNextStatus(order?.status || "PENDING");
+    setReason("");
+  };
 
   const header = (
     <div className="flex items-center gap-3.5">
@@ -72,10 +81,12 @@ const OrderDetailsDialog = ({
   const items = Array.isArray(order?.items) ? order.items : [];
   const history = Array.isArray(order?.statusHistory) ? order.statusHistory : [];
   const tableNumber = order?.tableId?.tableNumber;
+  const paymentStatus = order?.paymentStatus || "PENDING";
 
   return (
     <Dialog
       visible={visible}
+      onShow={initializeUiState}
       onHide={onHide}
       header={header}
       footer={footer}
@@ -141,6 +152,37 @@ const OrderDetailsDialog = ({
                     {String(order.status || "").replaceAll("_", " ")}
                   </span>
                 </span>
+                {canUpdateStatus && order?.status !== "CLOSED" && (
+                  <Button
+                    label="Close order"
+                    icon="pi pi-lock"
+                    size="small"
+                    severity="success"
+                    onClick={() => onUpdateStatus({ status: "CLOSED", reason: "" })}
+                    loading={updatingStatus}
+                    raised
+                  />
+                )}
+              </div>
+
+              {/* Payment */}
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Payment:{" "}
+                  <span className="font-extrabold text-gray-900 dark:text-white">
+                    {String(paymentStatus).toUpperCase()}
+                  </span>
+                </span>
+                {canUpdateStatus && paymentStatus !== "PAID" && typeof onUpdatePaymentStatus === "function" && (
+                  <Button
+                    label="Mark paid"
+                    icon="pi pi-check"
+                    size="small"
+                    onClick={() => onUpdatePaymentStatus({ paymentStatus: "PAID" })}
+                    loading={updatingPayment}
+                    raised
+                  />
+                )}
               </div>
 
               {canUpdateStatus && (

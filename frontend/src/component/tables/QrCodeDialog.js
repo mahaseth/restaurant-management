@@ -4,7 +4,7 @@
 // Has download and print buttons for the manager.
 // Designed to look premium with a nice frame around the QR code.
 
-import React, { useMemo } from "react";
+import React from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
 
@@ -37,8 +37,8 @@ async function copyText(text) {
 }
 
 const QrCodeDialog = ({ visible, onHide, table, onRegenerate }) => {
-  const orderUrl = useMemo(() => {
-    // Prefer the server-provided qrLink (it must match the QR payload).
+  // Prefer the server-provided qrLink (it must match the QR payload).
+  const orderUrl = (() => {
     if (table?.qrLink) return String(table.qrLink);
     if (typeof window === "undefined") return "";
     if (!table?._id || !table?.restaurantId) return "";
@@ -46,7 +46,7 @@ const QrCodeDialog = ({ visible, onHide, table, onRegenerate }) => {
     url.searchParams.set("tableId", String(table._id));
     url.searchParams.set("restaurantId", String(table.restaurantId));
     return url.toString();
-  }, [table?._id, table?.restaurantId]);
+  })();
 
   // Download the QR code as a PNG
   const handleDownload = () => {

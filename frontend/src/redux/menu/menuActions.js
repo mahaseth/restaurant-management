@@ -7,6 +7,8 @@ import {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  replaceMenuItemImage as replaceMenuItemImageApi,
+  deleteMenuItemImage as deleteMenuItemImageApi,
 } from "@/api/menu";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
@@ -71,6 +73,30 @@ export const removeMenuItem = createAsyncThunk(
       return id;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error, "Failed to delete menu item"));
+    }
+  }
+);
+
+// Replace a menu item's image (upload)
+export const replaceMenuItemImage = createAsyncThunk(
+  "menu/replaceImage",
+  async ({ id, file }, { rejectWithValue }) => {
+    try {
+      return await replaceMenuItemImageApi(id, file);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to replace image"));
+    }
+  }
+);
+
+// Delete a menu item's image (clear DB + best-effort Cloudinary delete)
+export const removeMenuItemImage = createAsyncThunk(
+  "menu/removeImage",
+  async (id, { rejectWithValue }) => {
+    try {
+      return await deleteMenuItemImageApi(id);
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error, "Failed to delete image"));
     }
   }
 );

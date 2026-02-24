@@ -142,7 +142,7 @@ export const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status, reason } = req.body;
 
-    if (!['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'SERVED', 'CANCELLED'].includes(status)) {
+    if (!['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'SERVED', 'CANCELLED', 'BILLED', 'CLOSED'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
@@ -155,6 +155,14 @@ export const updateOrderStatus = async (req, res) => {
 
     order.status = status;
     if (status === 'CANCELLED') order.cancelReason = reason;
+    if (status === "CLOSED") {
+      if (!order.closedAt) order.closedAt = new Date();
+      // Closing an order implies payment is settled.
+      if (order.paymentStatus !== "PAID") {
+        order.paymentStatus = "PAID";
+        if (!order.paidAt) order.paidAt = new Date();
+      }
+    }
 
     // If this order had customer additions waiting, any staff status update is an acknowledgment.
     // (Most commonly staff sets CONFIRMED again.)
@@ -174,6 +182,42 @@ export const updateOrderStatus = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ error: 'Server error updating status' });
+  }
+};
+
+/**
+ * Staff Update Order Payment Status (Authenticated)
+ * PATCH /api/order/staff/:orderId/payment-status
+ */
+export const updateOrderPaymentStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { paymentStatus } = req.body;
+
+    if (!["PENDING", "PAID"].includes(paymentStatus)) {
+      return res.status(400).json({ error: "Invalid payment status" });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+
+    order.paymentStatus = paymentStatus;
+    if (paymentStatus === "PAID") {
+      if (!order.paidAt) order.paidAt = new Date();
+    } else {
+      order.paidAt = undefined;
+    }
+
+    order.statusHistory.push({
+      status: `PAYMENT_${paymentStatus}`,
+      updatedBy: req.user._id,
+      reason: "",
+    });
+
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ error: "Server error updating payment status" });
   }
 };
 
@@ -229,7 +273,7 @@ export const editOrderItems = async (req, res) => {
  */
 export const getRecentOrdersStaff = async (req, res) => {
   try {
-    const { status, limit = 50, tableId } = req.query;
+    const { status, limit = 50, tableId, sinceHours } = req.query;
 
     const query = {
       restaurantId: req.restaurant?._id,
@@ -241,6 +285,15 @@ export const getRecentOrdersStaff = async (req, res) => {
         return res.status(400).json({ error: "Invalid table ID format" });
       }
       query.tableId = tableId;
+    }
+
+    // Default window is last 2 hours (matches staff Orders page).
+    // Use sinceHours=0 to disable time filtering ("all time").
+    const parsedSinceHours = sinceHours === undefined || sinceHours === null || sinceHours === ""
+      ? 2
+      : Number(sinceHours);
+    if (Number.isFinite(parsedSinceHours) && parsedSinceHours > 0) {
+      query.createdAt = { $gte: new Date(Date.now() - parsedSinceHours * 60 * 60 * 1000) };
     }
 
     const orders = await Order.find(query)

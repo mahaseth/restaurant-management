@@ -82,11 +82,29 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: {
-      values: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'SERVED', 'CANCELLED', 'BILLED'],
+      values: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'SERVED', 'CANCELLED', 'BILLED', 'CLOSED'],
       message: '{VALUE} is not a valid status'
     },
     default: 'PENDING',
     index: true
+  },
+  // Payment is tracked separately from kitchen/service status.
+  // Default is pending; staff can mark paid, and closing an order auto-marks paid.
+  paymentStatus: {
+    type: String,
+    enum: {
+      values: ["PENDING", "PAID"],
+      message: "{VALUE} is not a valid payment status",
+    },
+    default: "PENDING",
+    index: true,
+  },
+  paidAt: {
+    type: Date,
+  },
+  // When the table is freed up (final state).
+  closedAt: {
+    type: Date,
   },
   // When a customer adds more items to an existing order, staff should re-confirm.
   // This flag is a simple "notification" for the staff UI.
@@ -171,6 +189,7 @@ const orderSchema = new mongoose.Schema({
 // Compound indexes for efficient queries
 orderSchema.index({ tableId: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, status: 1, createdAt: -1 });
+orderSchema.index({ restaurantId: 1, paymentStatus: 1, createdAt: -1 });
 
 const Order = mongoose.model('Order', orderSchema);
 

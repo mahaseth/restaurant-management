@@ -1,5 +1,6 @@
 import MenuItem from '../models/MenuItem.js';
 import mongoose from "mongoose";
+import uploadFile, { deleteCloudinaryFileByUrl } from "../utils/fileUploader.js";
 
 
 export const getAllMenuItems = async (req, res) => {
@@ -138,6 +139,80 @@ export const deleteMenuItem = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+// =====================
+// Image helpers (staff)
+// =====================
+
+/**
+ * Replace menu item image (upload).
+ * POST /api/menuitems/:id/image (multipart/form-data with "image")
+ */
+export const replaceMenuItemImage = async (req, res) => {
+  try {
+    const restaurantId = req.restaurant._id;
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    const existing = await MenuItem.findOne({ _id: id, restaurantId });
+    if (!existing) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    // Best-effort: delete previous image (if it was hosted on Cloudinary).
+    if (existing.image) {
+      try {
+        await deleteCloudinaryFileByUrl(existing.image);
+      } catch {
+        // Ignore deletion errors; we still want DB to reflect new image.
+      }
+    }
+
+    const uploaded = await uploadFile([req.file], `/rest-id-${restaurantId}/menu-items`);
+    existing.image = uploaded?.[0]?.url || "";
+    existing.updatedBy = req.user._id;
+    await existing.save();
+
+    res.json(existing);
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Server error replacing menu image' });
+  }
+};
+
+/**
+ * Delete menu item image (clears DB + best-effort Cloudinary delete).
+ * DELETE /api/menuitems/:id/image
+ */
+export const deleteMenuItemImage = async (req, res) => {
+  try {
+    const restaurantId = req.restaurant._id;
+    const { id } = req.params;
+
+    const existing = await MenuItem.findOne({ _id: id, restaurantId });
+    if (!existing) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    if (existing.image) {
+      try {
+        await deleteCloudinaryFileByUrl(existing.image);
+      } catch {
+        // Ignore deletion failures; clearing DB value still makes UI consistent.
+      }
+    }
+
+    existing.image = "";
+    existing.updatedBy = req.user._id;
+    await existing.save();
+
+    res.json(existing);
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Server error deleting menu image' });
   }
 };
 

@@ -1,4 +1,5 @@
 import Table from '../models/Table.js';
+import Order from "../models/Order.js";
 import { generateTableQRCode } from '../utils/qrCode.js';
 
 /**
@@ -71,8 +72,30 @@ export const regenerateTableQr = async (req, res) => {
 export const getAllTables = async (req, res) => {
   try {
     const restaurantId = req.restaurant._id;
-    const tables = await Table.find({ restaurantId }).sort({ tableNumber: 1 });
-    res.json(tables);
+    const tables = await Table.find({ restaurantId }).sort({ tableNumber: 1 }).lean();
+
+    // Attach current (not closed) order status for each table so UI can show "occupied".
+    // We treat CANCELLED and CLOSED as not occupying a table.
+    const activeOrders = await Order.find({
+      restaurantId,
+      status: { $nin: ["CANCELLED", "CLOSED"] },
+    })
+      .sort({ createdAt: -1 })
+      .select("_id tableId orderNumber status paymentStatus total createdAt updatedAt")
+      .lean();
+
+    const currentOrderByTableId = new Map();
+    for (const o of activeOrders) {
+      const tId = String(o.tableId);
+      if (!currentOrderByTableId.has(tId)) currentOrderByTableId.set(tId, o);
+    }
+
+    const withOccupancy = tables.map((t) => ({
+      ...t,
+      currentOrder: currentOrderByTableId.get(String(t._id)) || null,
+    }));
+
+    res.json(withOccupancy);
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching tables' });
   }

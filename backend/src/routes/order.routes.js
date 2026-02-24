@@ -6,6 +6,7 @@ import {
   getRecentOrdersStaff,
   getOrderByIdStaff,
   updateOrderStatus,
+  updateOrderPaymentStatus,
   editOrderItems
 } from '../controllers/order.controller.js';
 import auth from '../middlewares/auth.js';
@@ -52,6 +53,14 @@ router.get(
 
 // Update order status (All Staff)
 router.patch('/staff/:orderId/status', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER, ROLE_KITCHEN]), updateOrderStatus);
+
+// Update order payment status (Owner/Admin/Manager/Cashier/Waiter)
+router.patch(
+  "/staff/:orderId/payment-status",
+  auth,
+  roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER]),
+  updateOrderPaymentStatus
+);
 
 // Edit order items (All Staff except Kitchen - as they just read the items)
 router.patch('/staff/:orderId/items', auth, roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER]), editOrderItems);

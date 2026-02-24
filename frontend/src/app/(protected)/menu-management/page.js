@@ -17,6 +17,8 @@ import {
   addMenuItem,
   editMenuItem,
   removeMenuItem,
+  replaceMenuItemImage,
+  removeMenuItemImage,
 } from "@/redux/menu/menuActions";
 
 // Dialogs
@@ -134,6 +136,7 @@ const MenuManagementPage = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
 
@@ -171,6 +174,38 @@ const MenuManagementPage = () => {
     } catch (err) {
       toast.error(typeof err === "string" ? err : (err?.error || "Failed to delete item"));
     } finally { setDeleting(false); }
+  };
+
+  const handleReplaceImage = async (file) => {
+    if (!selectedItem?._id || !file) return null;
+    setImageBusy(true);
+    try {
+      const updated = await dispatch(replaceMenuItemImage({ id: selectedItem._id, file })).unwrap();
+      setSelectedItem(updated);
+      toast.success("Image updated.");
+      return updated?.image || "";
+    } catch (err) {
+      toast.error(typeof err === "string" ? err : (err?.error || "Failed to update image"));
+      return null;
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!selectedItem?._id) return false;
+    setImageBusy(true);
+    try {
+      const updated = await dispatch(removeMenuItemImage(selectedItem._id)).unwrap();
+      setSelectedItem(updated);
+      toast.success("Image removed.");
+      return true;
+    } catch (err) {
+      toast.error(typeof err === "string" ? err : (err?.error || "Failed to delete image"));
+      return false;
+    } finally {
+      setImageBusy(false);
+    }
   };
 
   const handleToggleAvailability = async (item) => {
@@ -558,7 +593,13 @@ const MenuManagementPage = () => {
 
       {/* ===== Dialogs ===== */}
       <MenuItemFormDialog visible={showForm} onHide={() => setShowForm(false)}
-        onSave={handleSave} menuItem={selectedItem} saving={saving} />
+        onSave={handleSave}
+        menuItem={selectedItem}
+        saving={saving}
+        onReplaceImage={handleReplaceImage}
+        onDeleteImage={handleDeleteImage}
+        imageBusy={imageBusy}
+      />
       <DeleteMenuItemDialog visible={showDelete} onHide={() => setShowDelete(false)}
         onConfirm={handleDelete} menuItem={selectedItem} deleting={deleting} />
     </div>

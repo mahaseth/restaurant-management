@@ -4,7 +4,7 @@
 // If `user` is null => create new staff user.
 // If `user` is provided => edit existing staff user.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
@@ -83,9 +83,7 @@ const StaffFormDialog = ({ visible, onHide, onSave, user, saving, actorRoles }) 
 
   const roleValueTemplate = useMemo(() => roleItemTemplate, []);
 
-  useEffect(() => {
-    if (!visible) return;
-
+  const initializeForm = () => {
     setSubmitted(false);
     if (user) {
       setName(user.name || "");
@@ -102,7 +100,7 @@ const StaffFormDialog = ({ visible, onHide, onSave, user, saving, actorRoles }) 
       setIsActive(true);
       setPassword("");
     }
-  }, [visible, user]);
+  };
 
   const nameInvalid = submitted && !name.trim();
   const emailInvalid = submitted && !email.trim();
@@ -156,6 +154,7 @@ const StaffFormDialog = ({ visible, onHide, onSave, user, saving, actorRoles }) 
   return (
     <Dialog
       visible={visible}
+      onShow={initializeForm}
       onHide={onHide}
       footer={footer}
       style={{ width: "min(680px, 95vw)" }}
