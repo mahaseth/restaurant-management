@@ -23,6 +23,7 @@ import {
   addTable,
   editTable,
   removeTable,
+  regenerateQr,
 } from "@/redux/tables/tableActions";
 
 // My modular dialog components
@@ -76,6 +77,17 @@ const TablesPage = () => {
   const openQrDialog = (table) => {
     setSelectedTable(table);
     setShowQr(true);
+  };
+
+  const handleRegenerateQr = async (table) => {
+    if (!table?._id) return;
+    try {
+      const updated = await dispatch(regenerateQr(table._id)).unwrap();
+      setSelectedTable(updated);
+      toast.success("QR regenerated. Download/print the updated QR.");
+    } catch (err) {
+      toast.error(typeof err === "string" ? err : (err?.error || "Failed to regenerate QR"));
+    }
   };
 
   // =====================
@@ -576,7 +588,12 @@ const TablesPage = () => {
       {/* ===== Dialogs ===== */}
       <TableFormDialog visible={showForm} onHide={() => setShowForm(false)} onSave={handleSave} table={selectedTable} saving={saving} />
       <DeleteTableDialog visible={showDelete} onHide={() => setShowDelete(false)} onConfirm={handleDelete} table={selectedTable} deleting={deleting} />
-      <QrCodeDialog visible={showQr} onHide={() => setShowQr(false)} table={selectedTable} />
+      <QrCodeDialog
+        visible={showQr}
+        onHide={() => setShowQr(false)}
+        table={selectedTable}
+        onRegenerate={() => handleRegenerateQr(selectedTable)}
+      />
     </div>
   );
 };

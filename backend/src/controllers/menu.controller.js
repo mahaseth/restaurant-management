@@ -1,4 +1,5 @@
 import MenuItem from '../models/MenuItem.js';
+import mongoose from "mongoose";
 
 
 export const getAllMenuItems = async (req, res) => {
@@ -6,6 +7,27 @@ export const getAllMenuItems = async (req, res) => {
     const restaurantId = req.restaurant._id;
     const menuItems = await MenuItem.find({ restaurantId });
     res.json(menuItems);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Public menu endpoint (for QR ordering page)
+// GET /api/menuitems/public?restaurantId=...
+export const getPublicMenuItems = async (req, res) => {
+  try {
+    const { restaurantId } = req.query;
+    if (!restaurantId || !mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res.status(400).json({ error: "Valid restaurantId is required." });
+    }
+
+    // Only expose safe fields to customers.
+    const items = await MenuItem.find({ restaurantId })
+      .select("name description price category available image restaurantId")
+      .sort({ category: 1, name: 1 })
+      .lean();
+
+    res.status(200).json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

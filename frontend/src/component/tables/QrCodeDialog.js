@@ -4,11 +4,49 @@
 // Has download and print buttons for the manager.
 // Designed to look premium with a nice frame around the QR code.
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
 
-const QrCodeDialog = ({ visible, onHide, table }) => {
+async function copyText(text) {
+  const value = String(text || "");
+  if (!value) return false;
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const el = document.createElement("textarea");
+    el.value = value;
+    el.setAttribute("readonly", "");
+    el.style.position = "fixed";
+    el.style.top = "-9999px";
+    el.style.left = "-9999px";
+    document.body.appendChild(el);
+    el.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(el);
+    return !!ok;
+  } catch {
+    return false;
+  }
+}
+
+const QrCodeDialog = ({ visible, onHide, table, onRegenerate }) => {
+  const orderUrl = useMemo(() => {
+    // Prefer the server-provided qrLink (it must match the QR payload).
+    if (table?.qrLink) return String(table.qrLink);
+    if (typeof window === "undefined") return "";
+    if (!table?._id || !table?.restaurantId) return "";
+    const url = new URL("/order", window.location.origin);
+    url.searchParams.set("tableId", String(table._id));
+    url.searchParams.set("restaurantId", String(table.restaurantId));
+    return url.toString();
+  }, [table?._id, table?.restaurantId]);
 
   // Download the QR code as a PNG
   const handleDownload = () => {
@@ -23,6 +61,7 @@ const QrCodeDialog = ({ visible, onHide, table }) => {
   const handlePrint = () => {
     if (!table?.qrCode) return;
     const printWindow = window.open("", "_blank");
+    const safeOrderUrl = orderUrl ? String(orderUrl).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") : "";
     printWindow.document.write(`
       <html>
         <head><title>Table ${table.tableNumber} - QR Code</title></head>
@@ -30,6 +69,7 @@ const QrCodeDialog = ({ visible, onHide, table }) => {
           <h2 style="margin-bottom:8px;">Table ${table.tableNumber}</h2>
           <p style="color:#666;margin-bottom:24px;">Scan to order</p>
           <img src="${table.qrCode}" style="width:300px;height:300px;" />
+          ${safeOrderUrl ? `<p style="margin:18px 24px 0 24px; max-width:520px; word-break:break-all; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px; color:#333;">${safeOrderUrl}</p>` : ``}
         </body>
       </html>
     `);
@@ -137,6 +177,36 @@ const QrCodeDialog = ({ visible, onHide, table }) => {
               </p>
             </div>
 
+            {/* ===== Under-QR URL (copyable) ===== */}
+            {orderUrl && (
+              <div className="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                <p className="text-xs font-bold text-gray-700 dark:text-gray-200">Order link</p>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Copy this link if a QR scanner shows only `/order?...` (old QR). After regenerating and printing, scanning will open this full URL.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={orderUrl}
+                    readOnly
+                    className="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs font-mono
+                               border border-gray-200 dark:border-gray-800
+                               bg-gray-50/80 dark:bg-gray-950 text-gray-700 dark:text-gray-200"
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <Button
+                    label="Copy"
+                    icon="pi pi-copy"
+                    severity="secondary"
+                    outlined
+                    onClick={async () => {
+                      const ok = await copyText(orderUrl);
+                      if (!ok) return;
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* ===== Action buttons ===== */}
             <div className="flex gap-3 w-full">
               <Button
@@ -155,6 +225,19 @@ const QrCodeDialog = ({ visible, onHide, table }) => {
                 className="flex-1"
               />
             </div>
+
+            {typeof onRegenerate === "function" && (
+              <div className="w-full">
+                <Button
+                  label="Regenerate QR"
+                  icon="pi pi-refresh"
+                  severity="secondary"
+                  outlined
+                  onClick={onRegenerate}
+                  className="w-full"
+                />
+              </div>
+            )}
           </>
         ) : (
           /* ===== No QR code state ===== */

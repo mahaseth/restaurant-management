@@ -43,3 +43,9 @@ export async function deleteTable(id) {
   const response = await api.delete(`${TABLES_ENDPOINT}/${id}`);
   return response.data;
 }
+
+// Regenerate QR code for a table (useful after changing APP_URL / host)
+export async function regenerateTableQr(id) {
+  const response = await api.post(`${TABLES_ENDPOINT}/${id}/regenerate-qr`);
+  return response.data;
+}

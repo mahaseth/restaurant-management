@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     getAllMenuItems,
+    getPublicMenuItems,
     createMenuItem,
     getMenuItem,
     updateMenuItem,
@@ -11,6 +12,9 @@ import roleBasedAuth from '../middlewares/roleBasedAuth.js';
 import { ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER } from '../constants/roles.js';
 
 const router = express.Router();
+
+// Public endpoint used by QR ordering page (no auth)
+router.get('/public', getPublicMenuItems);
 
 // All routes require authentication
 // GET routes - any authenticated user can view

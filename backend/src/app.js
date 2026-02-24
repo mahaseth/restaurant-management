@@ -14,6 +14,7 @@ import menuRoutes from "./routes/menu.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import tableRoutes from "./routes/table.routes.js";
 import restaurantRoutes from "./routes/restaurant.routes.js";
+import publicRoutes from "./routes/public.routes.js";
 import multer from "multer";
 import connectCloudinary from "./config/cloudinary.js";
 import cors from "cors";
@@ -30,6 +31,7 @@ try {
   app.use(cors());
 
   app.use("/", homeRouter);
+  app.use("/api/public", publicRoutes);
   app.use("/api/users", auth, upload.single("image"), userRoute);
   app.use("/api/auth", authRoute);
   app.use('/api/bill', billRoutes);
@@ -38,7 +40,9 @@ try {
   app.use('/api/tables', auth, tableRoutes);
   app.use('/api/restaurant', auth, restaurantRoutes);
 
-  app.listen(config.port, () => {
+  // Bind on all interfaces so the API is reachable from your phone over Wi-Fi
+  // (e.g. http://192.168.x.x:5000). This also avoids some localhost IPv4/IPv6 quirks.
+  app.listen(config.port, "0.0.0.0", () => {
     console.log(`Server is running at port: ${config.port}...`);
   });
 } catch (error) {

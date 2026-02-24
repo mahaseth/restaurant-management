@@ -4,7 +4,8 @@ import {
   getAllTables,
   getTable,
   updateTable,
-  deleteTable
+  deleteTable,
+  regenerateTableQr
 } from '../controllers/table.controller.js';
 import roleBasedAuth from '../middlewares/roleBasedAuth.js';
 import { ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER } from '../constants/roles.js';
@@ -18,6 +19,7 @@ router.get('/:id', getTable);
 
 // Mutation ops - Owner, Admin and Manager only
 router.post('/', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), createTable);
+router.post('/:id/regenerate-qr', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), regenerateTableQr);
 router.put('/:id', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), updateTable);
 router.delete('/:id', roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER]), deleteTable);
 

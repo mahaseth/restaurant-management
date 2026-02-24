@@ -24,8 +24,11 @@ export const createTable = async (req, res) => {
     });
 
     // Generate QR code using the new table's ID
-    const qrCode = await generateTableQRCode(table._id, restaurantId);
-    table.qrCode = qrCode;
+    // Use request Origin so QR matches how the admin UI was accessed
+    // (localhost vs LAN IP).
+    const { qrDataUrl, orderLink } = await generateTableQRCode(table._id, restaurantId, { appUrl: req.get("origin") });
+    table.qrCode = qrDataUrl;
+    table.qrLink = orderLink;
 
     await table.save();
     res.status(201).json(table);
@@ -34,6 +37,30 @@ export const createTable = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
     res.status(500).json({ error: 'Server error creating table' });
+  }
+};
+
+/**
+ * @desc Regenerate QR code for a table (useful when switching from localhost to LAN/Wi-Fi)
+ * @route POST /api/tables/:id/regenerate-qr
+ */
+export const regenerateTableQr = async (req, res) => {
+  try {
+    const restaurantId = req.restaurant._id;
+    const table = await Table.findOne({ _id: req.params.id, restaurantId });
+
+    if (!table) {
+      return res.status(404).json({ error: "Table not found" });
+    }
+
+    const { qrDataUrl, orderLink } = await generateTableQRCode(table._id, restaurantId, { appUrl: req.get("origin") });
+    table.qrCode = qrDataUrl;
+    table.qrLink = orderLink;
+    await table.save();
+
+    res.json(table);
+  } catch (error) {
+    res.status(500).json({ error: "Server error regenerating QR code" });
   }
 };
 
