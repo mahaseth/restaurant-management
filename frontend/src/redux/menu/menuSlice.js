@@ -3,7 +3,7 @@
 // Handles all 4 actions: fetch, add, edit, remove.
 
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchMenuItems, addMenuItem, editMenuItem, removeMenuItem } from "./menuActions";
+import { fetchMenuItems, addMenuItem, editMenuItem, removeMenuItem, replaceMenuItemImage, removeMenuItemImage } from "./menuActions";
 
 const menuSlice = createSlice({
   name: "menu",
@@ -69,6 +69,30 @@ const menuSlice = createSlice({
         state.menuItems = state.menuItems.filter((item) => item._id !== action.payload);
       })
       .addCase(removeMenuItem.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      // --- Replace image ---
+      .addCase(replaceMenuItemImage.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(replaceMenuItemImage.fulfilled, (state, action) => {
+        const index = state.menuItems.findIndex((item) => item._id === action.payload._id);
+        if (index !== -1) state.menuItems[index] = action.payload;
+      })
+      .addCase(replaceMenuItemImage.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+
+      // --- Remove image ---
+      .addCase(removeMenuItemImage.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(removeMenuItemImage.fulfilled, (state, action) => {
+        const index = state.menuItems.findIndex((item) => item._id === action.payload._id);
+        if (index !== -1) state.menuItems[index] = action.payload;
+      })
+      .addCase(removeMenuItemImage.rejected, (state, action) => {
         state.error = action.payload;
       }),
 });

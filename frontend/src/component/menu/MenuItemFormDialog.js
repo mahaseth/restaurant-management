@@ -4,7 +4,7 @@
 // Pass `menuItem` prop to pre-fill the form when editing.
 // If `menuItem` is null, it means we're creating a new one.
 
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
@@ -42,8 +42,18 @@ const availabilityItemTemplate = (option) => (
   </div>
 );
 
-const MenuItemFormDialog = ({ visible, onHide, onSave, menuItem, saving }) => {
+const MenuItemFormDialog = ({
+  visible,
+  onHide,
+  onSave,
+  menuItem,
+  saving,
+  onReplaceImage,
+  onDeleteImage,
+  imageBusy,
+}) => {
   const isEdit = !!menuItem;
+  const fileInputRef = useRef(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -53,26 +63,23 @@ const MenuItemFormDialog = ({ visible, onHide, onSave, menuItem, saving }) => {
   const [available, setAvailable] = useState(true);
   const [image, setImage] = useState("");
 
-  // When the dialog opens, reset or pre-fill the form
-  useEffect(() => {
-    if (visible) {
-      if (menuItem) {
-        setName(menuItem.name || "");
-        setDescription(menuItem.description || "");
-        setPrice(menuItem.price ?? 0);
-        setCategory(menuItem.category || "main");
-        setAvailable(menuItem.available ?? true);
-        setImage(menuItem.image || "");
-      } else {
-        setName("");
-        setDescription("");
-        setPrice(0);
-        setCategory("main");
-        setAvailable(true);
-        setImage("");
-      }
+  const initializeForm = () => {
+    if (menuItem) {
+      setName(menuItem.name || "");
+      setDescription(menuItem.description || "");
+      setPrice(menuItem.price ?? 0);
+      setCategory(menuItem.category || "main");
+      setAvailable(menuItem.available ?? true);
+      setImage(menuItem.image || "");
+      return;
     }
-  }, [visible, menuItem]);
+    setName("");
+    setDescription("");
+    setPrice(0);
+    setCategory("main");
+    setAvailable(true);
+    setImage("");
+  };
 
   // Validation before saving
   const handleSubmit = () => {
@@ -80,6 +87,34 @@ const MenuItemFormDialog = ({ visible, onHide, onSave, menuItem, saving }) => {
     if (price < 0) return;
     if (!category) return;
     onSave({ name: name.trim(), description: description.trim(), price, category, available, image: image.trim() });
+  };
+
+  const handleChooseFile = () => {
+    if (!isEdit) return;
+    if (typeof onReplaceImage !== "function") return;
+    fileInputRef.current?.click?.();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target?.files?.[0];
+    // Reset the input so choosing the same file again re-triggers onChange
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!file) return;
+    if (typeof onReplaceImage !== "function") return;
+
+    const nextUrl = await onReplaceImage(file);
+    if (typeof nextUrl === "string") setImage(nextUrl);
+  };
+
+  const handleRemoveImage = async () => {
+    if (!isEdit) return;
+    if (typeof onDeleteImage !== "function") {
+      // Fallback: clear local state; saving the form will clear DB value
+      setImage("");
+      return;
+    }
+    const ok = await onDeleteImage();
+    if (ok) setImage("");
   };
 
   // Footer buttons
@@ -124,6 +159,7 @@ const MenuItemFormDialog = ({ visible, onHide, onSave, menuItem, saving }) => {
         </div>
       }
       visible={visible}
+      onShow={initializeForm}
       onHide={onHide}
       footer={footer}
       style={{ width: "540px" }}
@@ -266,8 +302,40 @@ const MenuItemFormDialog = ({ visible, onHide, onSave, menuItem, saving }) => {
             className="w-full"
           />
           <small className="text-gray-400 dark:text-gray-500 text-xs ml-0.5">
-            Optional — paste a URL to a photo of the dish
+            Optional — paste a URL, or upload/replace the image (edit mode)
           </small>
+
+          {/* Upload/Replace controls (edit mode) */}
+          {isEdit && (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <Button
+                label={image ? "Replace Image" : "Upload Image"}
+                icon="pi pi-upload"
+                onClick={handleChooseFile}
+                loading={!!imageBusy}
+                outlined
+                size="small"
+                disabled={typeof onReplaceImage !== "function"}
+              />
+              <Button
+                label="Delete Image"
+                icon="pi pi-trash"
+                severity="danger"
+                onClick={handleRemoveImage}
+                loading={!!imageBusy}
+                outlined
+                size="small"
+                disabled={!image}
+              />
+            </div>
+          )}
 
           {/* Image preview */}
           {image && (

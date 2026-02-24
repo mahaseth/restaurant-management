@@ -4,7 +4,7 @@
 // I pass `table` prop to pre-fill the form when editing.
 // If `table` is null, it means I'm creating a new one.
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputNumber } from "primereact/inputnumber";
 import { Dropdown } from "primereact/dropdown";
@@ -33,20 +33,17 @@ const TableFormDialog = ({ visible, onHide, onSave, table, saving }) => {
   const [capacity, setCapacity] = useState(4);
   const [status, setStatus] = useState("ACTIVE");
 
-  // When the dialog opens, reset or pre-fill the form
-  useEffect(() => {
-    if (visible) {
-      if (table) {
-        setTableNumber(table.tableNumber);
-        setCapacity(table.capacity);
-        setStatus(table.status);
-      } else {
-        setTableNumber(null);
-        setCapacity(4);
-        setStatus("ACTIVE");
-      }
+  const initializeForm = () => {
+    if (table) {
+      setTableNumber(table.tableNumber);
+      setCapacity(table.capacity);
+      setStatus(table.status);
+      return;
     }
-  }, [visible, table]);
+    setTableNumber(null);
+    setCapacity(4);
+    setStatus("ACTIVE");
+  };
 
   // Simple validation before saving
   const handleSubmit = () => {
@@ -98,6 +95,7 @@ const TableFormDialog = ({ visible, onHide, onSave, table, saving }) => {
         </div>
       }
       visible={visible}
+      onShow={initializeForm}
       onHide={onHide}
       footer={footer}
       style={{ width: "480px" }}

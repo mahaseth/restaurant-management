@@ -213,6 +213,37 @@ const TablesPage = () => {
     );
   };
 
+  // Current occupancy (based on latest non-closed order returned by API)
+  const occupancyTemplate = (rowData) => {
+    const o = rowData?.currentOrder;
+    if (!o) {
+      return (
+        <Tag value="Free" severity="success" className="!text-xs !px-3 !py-1" />
+      );
+    }
+
+    const sev = {
+      PENDING: "warning",
+      CONFIRMED: "success",
+      IN_PROGRESS: "info",
+      SERVED: "info",
+      BILLED: "secondary",
+    }[o.status] || "info";
+
+    return (
+      <div className="flex flex-col gap-1">
+        <Tag
+          value={`Occupied · ${String(o.status || "").replaceAll("_", " ")}`}
+          severity={sev}
+          className="!text-xs !px-3 !py-1 w-fit"
+        />
+        <span className="text-[11px] text-gray-400 font-mono">
+          {o.orderNumber || String(o._id || "").slice(0, 10)}
+        </span>
+      </div>
+    );
+  };
+
   // QR code as a clickable thumbnail with hover overlay
   const qrTemplate = (rowData) => {
     if (!rowData.qrCode) {
@@ -353,7 +384,9 @@ const TablesPage = () => {
     return (
       String(t.tableNumber).includes(q) ||
       t.status.toLowerCase().includes(q) ||
-      String(t.capacity).includes(q)
+      String(t.capacity).includes(q) ||
+      String(t?.currentOrder?.orderNumber || "").toLowerCase().includes(q) ||
+      String(t?.currentOrder?.status || "").toLowerCase().includes(q)
     );
   });
 
@@ -579,6 +612,7 @@ const TablesPage = () => {
           <Column field="tableNumber" header="Table" sortable body={tableNumberTemplate} style={{ minWidth: "12rem" }} />
           <Column field="capacity" header="Capacity" sortable body={capacityTemplate} style={{ minWidth: "10rem" }} />
           <Column field="status" header="Status" sortable body={statusTemplate} style={{ minWidth: "9rem" }} />
+          <Column header="Current Order" body={occupancyTemplate} style={{ minWidth: "13rem" }} />
           <Column header="QR Code" body={qrTemplate} style={{ minWidth: "5rem" }} />
           <Column field="createdAt" header="Created" sortable body={dateTemplate} style={{ minWidth: "10rem" }} />
           <Column header="Actions" body={actionsTemplate} style={{ minWidth: "8rem" }} frozen alignFrozen="right" />

@@ -42,3 +42,22 @@ export async function deleteMenuItem(id) {
   const response = await api.delete(`${MENU_ENDPOINT}/${id}`);
   return response.data;
 }
+
+// =====================
+// Image helpers
+// =====================
+
+export async function replaceMenuItemImage(id, file) {
+  const form = new FormData();
+  form.append("image", file);
+
+  const response = await api.post(`${MENU_ENDPOINT}/${id}/image`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+}
+
+export async function deleteMenuItemImage(id) {
+  const response = await api.delete(`${MENU_ENDPOINT}/${id}/image`);
+  return response.data;
+}

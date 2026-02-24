@@ -158,10 +158,10 @@ export const payBill = async (req, res) => {
     bill.paymentMethod = paymentMethod || 'CASH';
     await bill.save();
 
-    // Update orders to BILLED status
+    // Update orders to BILLED status and mark them paid.
     await Order.updateMany(
       { _id: { $in: bill.orderIds } },
-      { $set: { status: 'BILLED' } }
+      { $set: { status: 'BILLED', paymentStatus: "PAID", paidAt: new Date() } }
     );
 
     res.json(bill);

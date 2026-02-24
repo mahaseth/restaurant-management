@@ -16,7 +16,7 @@ import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { Skeleton } from "primereact/skeleton";
 
-import { getOrderByIdStaff, getRecentOrdersStaff, updateOrderStatusStaff } from "@/api/order";
+import { getOrderByIdStaff, getRecentOrdersStaffByWindow, updateOrderPaymentStatusStaff, updateOrderStatusStaff } from "@/api/order";
 import OrderDetailsDialog from "@/component/orders/OrderDetailsDialog";
 
 const STATUS_FILTERS = [
@@ -25,6 +25,8 @@ const STATUS_FILTERS = [
   { label: "Confirmed", value: "CONFIRMED" },
   { label: "In Progress", value: "IN_PROGRESS" },
   { label: "Served", value: "SERVED" },
+  { label: "Billed", value: "BILLED" },
+  { label: "Closed", value: "CLOSED" },
   { label: "Cancelled", value: "CANCELLED" },
 ];
 
@@ -47,12 +49,14 @@ const OrdersPage = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sinceHours, setSinceHours] = useState(2); // default: last 2 hours
 
   // Details dialog
   const [showDetails, setShowDetails] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [updatingPayment, setUpdatingPayment] = useState(false);
 
   const roles = Array.isArray(currentUser?.roles) ? currentUser.roles : (currentUser?.roles ? [currentUser.roles] : []);
   const canUpdateStatus = roles.some((r) => ["OWNER", "ADMIN", "MANAGER", "CASHIER", "WAITER", "KITCHEN"].includes(r));
@@ -60,7 +64,11 @@ const OrdersPage = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const data = await getRecentOrdersStaff({ status: statusFilter || undefined, limit: 100 });
+      const data = await getRecentOrdersStaffByWindow({
+        status: statusFilter || undefined,
+        limit: 100,
+        sinceHours,
+      });
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error(err?.response?.data?.error || err?.message || "Failed to load orders.");
@@ -72,7 +80,7 @@ const OrdersPage = () => {
   useEffect(() => {
     fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+  }, [statusFilter, sinceHours]);
 
   const filteredOrders = useMemo(() => {
     if (!search) return orders;
@@ -94,7 +102,7 @@ const OrdersPage = () => {
   const served = orders.filter((o) => o.status === "SERVED").length;
   const cancelled = orders.filter((o) => o.status === "CANCELLED").length;
   const revenue = orders
-    .filter((o) => ["SERVED", "BILLED"].includes(o.status))
+    .filter((o) => ["SERVED", "BILLED", "CLOSED"].includes(o.status))
     .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
   const summaryCards = [
@@ -139,6 +147,7 @@ const OrdersPage = () => {
       SERVED: "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-700/30",
       CANCELLED: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200/60 dark:border-red-700/30",
       BILLED: "bg-slate-50 dark:bg-slate-900/20 text-slate-700 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/30",
+      CLOSED: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-700/30",
     };
     const cls = cfg[row.status] || cfg.PENDING;
     return (
@@ -153,6 +162,20 @@ const OrdersPage = () => {
             Additions
           </span>
         )}
+      </span>
+    );
+  };
+
+  const paymentTemplate = (row) => {
+    const status = row?.paymentStatus || "PENDING";
+    const cfg = {
+      PENDING: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-700/30",
+      PAID: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-700/30",
+    };
+    const cls = cfg[status] || cfg.PENDING;
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${cls}`}>
+        {String(status).toUpperCase()}
       </span>
     );
   };
@@ -193,16 +216,17 @@ const OrdersPage = () => {
 
   const openDetails = async (orderId) => {
     if (!orderId) return;
-    setShowDetails(true);
     setSelectedOrder(null);
     setLoadingDetails(true);
     try {
       const data = await getOrderByIdStaff(orderId);
       setSelectedOrder(data);
+      setLoadingDetails(false);
+      setShowDetails(true);
     } catch (err) {
       toast.error(err?.response?.data?.error || err?.message || "Failed to load order details.");
-      setShowDetails(false);
     } finally {
+      // If the request failed, ensure loading state is cleared.
       setLoadingDetails(false);
     }
   };
@@ -225,6 +249,23 @@ const OrdersPage = () => {
       toast.error(err?.response?.data?.error || err?.message || "Failed to update status.");
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  const handleUpdatePaymentStatus = async ({ paymentStatus }) => {
+    if (!selectedOrder?._id) return;
+    if (!paymentStatus) return;
+
+    setUpdatingPayment(true);
+    try {
+      const updated = await updateOrderPaymentStatusStaff(selectedOrder._id, { paymentStatus });
+      toast.success("Payment status updated.");
+      setSelectedOrder(updated);
+      await fetchOrders();
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.message || "Failed to update payment status.");
+    } finally {
+      setUpdatingPayment(false);
     }
   };
 
@@ -323,7 +364,59 @@ const OrdersPage = () => {
       )}
 
       {/* Status filters */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-3">
+        {/* Time window */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Time window
+          </span>
+          <button
+            onClick={() => setSinceHours(2)}
+            className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all
+              ${sinceHours === 2
+                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20"
+                : "bg-white dark:bg-gray-800/80 text-gray-600 dark:text-gray-200 border-gray-200 dark:border-gray-700/50 hover:border-blue-300"
+              }`}
+          >
+            Last 2h
+          </button>
+          <button
+            onClick={() => setSinceHours(24)}
+            className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all
+              ${sinceHours === 24
+                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20"
+                : "bg-white dark:bg-gray-800/80 text-gray-600 dark:text-gray-200 border-gray-200 dark:border-gray-700/50 hover:border-blue-300"
+              }`}
+          >
+            Last 24h
+          </button>
+          <div className="flex items-center gap-2 ml-1">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Custom (hours)</span>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={sinceHours}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (!Number.isFinite(v) || v < 0) return;
+                setSinceHours(v);
+              }}
+              className="w-24 px-3 py-2 rounded-xl border text-sm font-semibold
+                         bg-white dark:bg-gray-800/80 text-gray-700 dark:text-gray-200
+                         border-gray-200 dark:border-gray-700/50
+                         focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+              title="Use 0 to show all time"
+            />
+          </div>
+          <div className="flex-1" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            Default: last 2 hours
+          </span>
+        </div>
+
+        {/* Status chips + search */}
+        <div className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map((f) => (
           <button
             key={f.label}
@@ -365,6 +458,7 @@ const OrdersPage = () => {
           )}
         </div>
       </div>
+      </div>
 
       {/* Orders table */}
       <div className="bg-white dark:bg-gray-800/80 rounded-2xl
@@ -386,8 +480,9 @@ const OrdersPage = () => {
           stripedRows
         >
           <Column header="Order #" body={orderNumberTemplate} style={{ minWidth: "9rem" }} />
-          <Column header="Order" body={orderTemplate} style={{ minWidth: "14rem" }} />
+          <Column header="Table" body={orderTemplate} style={{ minWidth: "14rem" }} />
           <Column field="status" header="Status" sortable body={statusTemplate} style={{ minWidth: "10rem" }} />
+          <Column header="Payment" body={paymentTemplate} style={{ minWidth: "9rem" }} />
           <Column header="Items" body={itemsCountTemplate} style={{ minWidth: "6rem" }} />
           <Column field="total" header="Total" sortable body={totalTemplate} style={{ minWidth: "7rem" }} />
           <Column field="createdAt" header="Created" sortable body={createdTemplate} style={{ minWidth: "10rem" }} />
@@ -402,6 +497,8 @@ const OrdersPage = () => {
         canUpdateStatus={canUpdateStatus}
         onUpdateStatus={handleUpdateStatus}
         updatingStatus={updatingStatus}
+        onUpdatePaymentStatus={handleUpdatePaymentStatus}
+        updatingPayment={updatingPayment}
       />
     </div>
   );
