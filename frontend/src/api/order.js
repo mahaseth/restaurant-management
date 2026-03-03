@@ -22,13 +22,14 @@ export async function getRecentOrdersStaff({ status, limit, tableId } = {}) {
   return response.data;
 }
 
-export async function getRecentOrdersStaffByWindow({ status, limit, tableId, sinceHours } = {}) {
+export async function getRecentOrdersStaffByWindow({ status, limit, tableId, sinceHours, orderType } = {}) {
   const response = await api.get(`${ORDER_ENDPOINT}/staff/recent`, {
     params: {
       ...(status ? { status } : {}),
       ...(limit ? { limit } : {}),
       ...(tableId ? { tableId } : {}),
       ...(sinceHours !== undefined && sinceHours !== null ? { sinceHours } : {}),
+      ...(orderType ? { orderType } : {}),
     },
   });
   return response.data;
@@ -69,6 +70,25 @@ export async function updateOrderPaymentStatusStaff(orderId, { paymentStatus } =
 
 export async function editOrderItemsStaff(orderId, { items, notes } = {}) {
   const response = await api.patch(`${ORDER_ENDPOINT}/staff/${orderId}/items`, { items, notes });
+  return response.data;
+}
+
+export async function createOrderStaff({
+  tableId,
+  items,
+  notes,
+  paymentStatus,
+  orderType,
+  walkInName,
+} = {}) {
+  const response = await api.post(`${ORDER_ENDPOINT}/staff`, {
+    tableId,
+    items,
+    notes,
+    paymentStatus,
+    orderType,
+    walkInName,
+  });
   return response.data;
 }
 

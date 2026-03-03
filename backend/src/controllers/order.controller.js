@@ -88,6 +88,88 @@ export const createOrder = async (req, res) => {
 };
 
 /**
+ * Create a new order (Staff / Walk-in / Counter)
+ * POST /api/order/staff
+ */
+export const createOrderStaff = async (req, res) => {
+  try {
+    const {
+      tableId,
+      items,
+      notes,
+      paymentStatus,
+      orderType,
+      walkInName,
+    } = req.body;
+
+    const restaurantId = req.restaurant?._id;
+    if (!restaurantId) {
+      return res.status(400).json({ error: "Restaurant context missing" });
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "items are required" });
+    }
+
+    const normalizedType = orderType === "TAKEAWAY" ? "TAKEAWAY" : "DINE_IN";
+
+    let resolvedTableId = tableId;
+    if (normalizedType === "DINE_IN") {
+      if (!resolvedTableId) {
+        return res.status(400).json({ error: "tableId is required for dine-in orders" });
+      }
+      if (!mongoose.Types.ObjectId.isValid(resolvedTableId)) {
+        return res.status(400).json({ error: "Invalid table ID format" });
+      }
+      const table = await Table.findOne({ _id: resolvedTableId, restaurantId }).lean();
+      if (!table) {
+        return res.status(404).json({ error: "Table not found" });
+      }
+    } else {
+      // Takeaway: no table assignment
+      resolvedTableId = undefined;
+    }
+
+    // Validate items and compute totals server-side
+    const itemsWithRestaurant = items.map((it) => ({ ...it, restaurantId }));
+    const { validatedItems, subtotal, tax, total } = await validateAndCalculateOrder(itemsWithRestaurant);
+
+    const orderNumber = await generateUniqueOrderNumber();
+    const nextPaymentStatus = paymentStatus === "PAID" ? "PAID" : "PENDING";
+
+    const order = new Order({
+      orderNumber,
+      orderType: normalizedType,
+      tableId: resolvedTableId,
+      walkInName: normalizedType === "TAKEAWAY" ? String(walkInName || "").trim() : "",
+      restaurantId,
+      items: validatedItems,
+      subtotal,
+      tax,
+      total,
+      notes: notes || "",
+      paymentStatus: nextPaymentStatus,
+      paidAt: nextPaymentStatus === "PAID" ? new Date() : undefined,
+      statusHistory: [{
+        status: "PENDING",
+        updatedBy: req.user?._id || "Staff",
+        reason: normalizedType === "TAKEAWAY" ? "Walk-in takeaway order created" : "Walk-in table order created",
+      }],
+    });
+
+    await order.save();
+    const populated = await Order.findById(order._id).populate("tableId", "tableNumber").lean();
+    res.status(201).json(populated || order);
+  } catch (error) {
+    console.error("Create Order (Staff) Error:", error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(400).json({ error: error.message || "Server error creating order" });
+  }
+};
+
+/**
  * Get recent orders for a table (Public)
  * GET /api/order/:tableId
  */
@@ -233,11 +315,16 @@ export const editOrderItems = async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    if (order.status !== 'PENDING') {
-      return res.status(400).json({ error: 'Items can only be edited while order is PENDING' });
+    if (["CANCELLED", "CLOSED"].includes(order.status)) {
+      return res.status(400).json({ error: `Items cannot be edited while order is ${order.status}` });
     }
 
-    const { validatedItems, subtotal, tax, total } = await validateAndCalculateOrder(items);
+    // Ensure validation enforces restaurant ownership of menu items.
+    const itemsWithRestaurant = (Array.isArray(items) ? items : []).map((it) => ({
+      ...it,
+      restaurantId: order.restaurantId,
+    }));
+    const { validatedItems, subtotal, tax, total } = await validateAndCalculateOrder(itemsWithRestaurant);
 
     order.editHistory.push({
       updatedBy: req.user._id,
@@ -273,13 +360,16 @@ export const editOrderItems = async (req, res) => {
  */
 export const getRecentOrdersStaff = async (req, res) => {
   try {
-    const { status, limit = 50, tableId, sinceHours } = req.query;
+    const { status, limit = 50, tableId, sinceHours, orderType } = req.query;
 
     const query = {
       restaurantId: req.restaurant?._id,
     };
 
     if (status) query.status = status;
+    if (orderType && ["DINE_IN", "TAKEAWAY"].includes(String(orderType))) {
+      query.orderType = String(orderType);
+    }
     if (tableId) {
       if (!mongoose.Types.ObjectId.isValid(tableId)) {
         return res.status(400).json({ error: "Invalid table ID format" });
