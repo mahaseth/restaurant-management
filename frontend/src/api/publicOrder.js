@@ -17,7 +17,7 @@ export async function getPublicTableInfo(tableId, restaurantId) {
   return response.data;
 }
 
-export async function createOrderPublic({ tableId, restaurantId, items, notes, clientOrderId, customerEmail }) {
+export async function createOrderPublic({ tableId, restaurantId, items, notes, clientOrderId, customerEmail, stripePaymentIntentId }) {
   const response = await api.post("/api/order", {
     tableId,
     restaurantId,
@@ -25,6 +25,7 @@ export async function createOrderPublic({ tableId, restaurantId, items, notes, c
     notes,
     clientOrderId,
     customerEmail,
+    stripePaymentIntentId,
   });
   return response.data;
 }

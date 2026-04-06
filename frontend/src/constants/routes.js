@@ -21,3 +21,6 @@ export const USER_MANAGEMENT_ROUTE = "/user-management";
 export const STAFF_ROUTE = "/staff";
 export const SETTINGS_ROUTE = "/settings";
 export const TABLES_ROUTE = "/tables";
+export const AI_STUDIO_ROUTE = "/ai-studio";
+export const AI_STUDIO_CHAT_DESIGN_ROUTE = "/ai-studio/chat-design";
+export const publicAiChatPath = (slug) => `/ai-chat/${slug}`;

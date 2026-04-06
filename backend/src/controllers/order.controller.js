@@ -3,6 +3,8 @@ import Order from '../models/Order.js';
 import Table from '../models/Table.js';
 import mongoose from 'mongoose';
 import { generateOrderNumber, validateAndCalculateOrder } from "../utils/orderUtils.js";
+import Stripe from "stripe";
+import config from "../config/config.js";
 
 async function generateUniqueOrderNumber() {
   // Best-effort uniqueness; orderNumber has a unique index as final guard.
@@ -22,7 +24,7 @@ async function generateUniqueOrderNumber() {
  */
 export const createOrder = async (req, res) => {
   try {
-    const { tableId, restaurantId, items, notes, clientOrderId, customerEmail } = req.body;
+    const { tableId, restaurantId, items, notes, clientOrderId, customerEmail, stripePaymentIntentId } = req.body;
 
     // 1. Basic validation
     if (!tableId || !restaurantId || !items || !items.length) {
@@ -53,7 +55,34 @@ export const createOrder = async (req, res) => {
     const itemsWithRestaurant = items.map((it) => ({ ...it, restaurantId }));
     const { validatedItems, subtotal, tax, total } = await validateAndCalculateOrder(itemsWithRestaurant);
 
-    // 5. Create order
+    // 5. If a Stripe PaymentIntent was provided, verify it succeeded and amounts match.
+    let paymentStatus = "PENDING";
+    let paidAt = undefined;
+
+    if (stripePaymentIntentId) {
+      if (!config.stripe.secretKey) {
+        return res.status(500).json({ error: "Payment processing is not configured on this server." });
+      }
+      const stripe = new Stripe(config.stripe.secretKey, { apiVersion: "2024-11-20.acacia" });
+      const pi = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
+      if (pi.status !== "succeeded") {
+        return res.status(400).json({ error: "Payment has not been completed. Please complete payment before placing the order." });
+      }
+      // Verify the amount matches (allow ±1 cent for floating point rounding)
+      const expectedCents = Math.round(total * 100);
+      if (Math.abs(pi.amount - expectedCents) > 1) {
+        return res.status(400).json({ error: "Payment amount does not match order total. Please try again." });
+      }
+      // Prevent duplicate order for the same payment
+      const dupOrder = await Order.findOne({ stripePaymentIntentId });
+      if (dupOrder) {
+        return res.status(200).json(dupOrder);
+      }
+      paymentStatus = "PAID";
+      paidAt = new Date();
+    }
+
+    // 6. Create order
     const orderNumber = await generateUniqueOrderNumber();
     const order = new Order({
       orderNumber,
@@ -66,12 +95,15 @@ export const createOrder = async (req, res) => {
       total,
       notes: notes || '',
       clientOrderId,
+      stripePaymentIntentId: stripePaymentIntentId || undefined,
+      paymentStatus,
+      paidAt,
       customerIP: req.ip,
       userAgent: req.get('User-Agent'),
       statusHistory: [{
         status: 'PENDING',
         updatedBy: 'Customer',
-        reason: 'Order placed'
+        reason: stripePaymentIntentId ? 'Order placed with online payment' : 'Order placed'
       }]
     });
 

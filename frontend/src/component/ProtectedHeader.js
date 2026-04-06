@@ -3,7 +3,7 @@
 import React from "react";
 import { BreadCrumb } from "primereact/breadcrumb";
 import { usePathname } from "next/navigation";
-import { HOME_ROUTE, DASHBOARD_ROUTE } from "@/constants/routes";
+import { AI_STUDIO_CHAT_DESIGN_ROUTE, AI_STUDIO_ROUTE, HOME_ROUTE } from "@/constants/routes";
 import ThemeToggler from "./ThemeToggler";
 import User from "./User";
 import Link from "next/link";
@@ -35,16 +35,32 @@ const ProtectedHeader = () => {
     )
   };
 
+  const isChatDesignPage = pathname === AI_STUDIO_CHAT_DESIGN_ROUTE;
+
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
-      <div className="px-4 py-3 flex items-center justify-between">
-        {/* Left: Breadcrumbs */}
-        <div className="flex items-center gap-4">
-          <BreadCrumb
-            model={items}
-            home={home}
-            className="bg-transparent border-none p-0 text-gray-500 dark:text-gray-400"
-          />
+    <header
+      className={`sticky top-0 z-30 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/80 ${
+        isChatDesignPage ? "py-1.5" : "py-3"
+      }`}
+    >
+      <div className="flex items-center justify-between px-3 sm:px-4">
+        {/* Left: breadcrumbs — minimal strip on chat design to maximize content height */}
+        <div className="flex min-w-0 items-center gap-2">
+          {isChatDesignPage ? (
+            <div className="flex min-w-0 items-center gap-2 text-xs">
+              <Link href={AI_STUDIO_ROUTE} className="shrink-0 font-medium text-primary hover:underline">
+                ← AI Studio
+              </Link>
+              <span className="text-gray-300 dark:text-gray-600">/</span>
+              <span className="truncate text-gray-600 dark:text-gray-400">Chat appearance</span>
+            </div>
+          ) : (
+            <BreadCrumb
+              model={items}
+              home={home}
+              className="border-none bg-transparent p-0 text-gray-500 dark:text-gray-400"
+            />
+          )}
         </div>
 
         {/* Right: Actions */}

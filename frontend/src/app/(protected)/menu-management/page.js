@@ -483,8 +483,8 @@ const MenuManagementPage = () => {
               <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 Menu Management
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-[13px] mt-0.5">
-                Manage dishes, prices & categories
+              <p className="text-gray-500 dark:text-gray-400 text-[13px] mt-0.5 max-w-xl">
+                Manage dishes, prices & categories. Changes sync automatically to the guest AI chat (AI Studio).
               </p>
             </div>
           </div>

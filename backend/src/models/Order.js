@@ -171,6 +171,13 @@ const orderSchema = new mongoose.Schema({
     sparse: true, // Allow null values, but enforce uniqueness when present
     index: true
   },
+  // Stripe PaymentIntent ID — set when customer pays online before order is submitted
+  stripePaymentIntentId: {
+    type: String,
+    sparse: true,
+    index: true,
+    trim: true,
+  },
   // Metadata
   customerIP: {
     type: String,

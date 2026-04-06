@@ -1,6 +1,14 @@
 import MenuItem from '../models/MenuItem.js';
 import mongoose from "mongoose";
 import uploadFile, { deleteCloudinaryFileByUrl } from "../utils/fileUploader.js";
+import { syncMenuAndUpdateAgentMeta } from "../features/ai-studio/services/menuSync.service.js";
+
+/** Rebuild AI menu embeddings without blocking the HTTP response. */
+function scheduleMenuAiSync(restaurantId) {
+  void syncMenuAndUpdateAgentMeta(restaurantId).catch((err) => {
+    console.error("[menu] AI menu sync failed:", err?.message || err);
+  });
+}
 
 
 export const getAllMenuItems = async (req, res) => {
@@ -70,6 +78,7 @@ export const updateMenuItem = async (req, res) => {
             { new: true, runValidators: true }
         );  
         
+        scheduleMenuAiSync(restaurantId);
         res.json(menuItem);
     } catch (error) {
         if (error.name === 'ValidationError') {
@@ -108,6 +117,7 @@ export const createMenuItem = async (req, res) => {
     });
     
     await menuItem.save();
+    scheduleMenuAiSync(restaurantId);
     res.status(201).json(menuItem);
     
   } catch (error) {
@@ -131,7 +141,8 @@ export const deleteMenuItem = async (req, res) => {
     if (!menuItem) {
       return res.status(404).json({ error: 'Menu item not found' });
     }
-    
+
+    scheduleMenuAiSync(restaurantId);
     res.json({ 
       success: true, 
       message: 'Menu item deleted successfully',
@@ -178,6 +189,7 @@ export const replaceMenuItemImage = async (req, res) => {
     existing.updatedBy = req.user._id;
     await existing.save();
 
+    scheduleMenuAiSync(restaurantId);
     res.json(existing);
   } catch (error) {
     res.status(500).json({ error: error.message || 'Server error replacing menu image' });
@@ -210,6 +222,7 @@ export const deleteMenuItemImage = async (req, res) => {
     existing.updatedBy = req.user._id;
     await existing.save();
 
+    scheduleMenuAiSync(restaurantId);
     res.json(existing);
   } catch (error) {
     res.status(500).json({ error: error.message || 'Server error deleting menu image' });
