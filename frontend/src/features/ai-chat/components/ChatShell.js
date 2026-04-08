@@ -225,14 +225,21 @@ export default function ChatShell({
               className="flex items-end gap-2 rounded-2xl bg-slate-50/95 p-1.5 pl-3 ring-1 ring-slate-200/80 focus-within:ring-2 focus-within:ring-offset-0"
               style={{ ["--chat-ring"]: hexAlpha(p, 0.38) }}
             >
-              <input
-                className="min-h-[48px] min-w-0 flex-1 rounded-xl border-0 bg-transparent px-1 py-2 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 sm:text-base"
+              <textarea
+                rows={1}
+                className="min-h-[48px] max-h-[120px] min-w-0 flex-1 resize-none rounded-xl border-0 bg-transparent px-1 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 sm:text-base"
                 placeholder="Ask about the menu, prices, or diets…"
                 title="Ask about the menu, prices, or dietary options."
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    onSend(e);
+                  }
+                }}
                 disabled={sending}
-                style={{ color: "#0f172a" }}
+                style={{ color: "#0f172a", overflowY: "auto" }}
               />
               <button
                 type="submit"

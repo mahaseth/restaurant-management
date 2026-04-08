@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useChatTheme } from "../utils/ThemeProvider";
 import { surfaceBackgroundStyle } from "../utils/surfaceBackgroundStyle";
 
@@ -18,6 +19,8 @@ export default function WelcomeScreen({
   isMobile = false,
 }) {
   const theme = useChatTheme();
+  const languageWords = ["English", "Hindi", "नेपाली", "Español", "Français", "中文", "العربية"];
+  const [languageWordIndex, setLanguageWordIndex] = useState(0);
   const p = theme.primaryColor || "#2563eb";
   const brandLine = [theme.brandName, theme.brandTagline].filter(Boolean).join(" · ");
   const displayName = agentName || "Your Assistant";
@@ -37,6 +40,13 @@ export default function WelcomeScreen({
       }`;
 
   const welcomeSurface = surfaceBackgroundStyle(theme.welcomeBg);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setLanguageWordIndex((prev) => (prev + 1) % languageWords.length);
+    }, 1200);
+    return () => window.clearInterval(timer);
+  }, [languageWords.length]);
 
   return (
     <div
@@ -121,10 +131,33 @@ export default function WelcomeScreen({
           </p>
         ) : null}
 
+        <p className="mt-4 text-sm font-medium" style={{ color: theme.welcomeTextColor || "#e2e8f0" }}>
+          You can message us in any language:{" "}
+          <span
+            key={languageWords[languageWordIndex]}
+            className="inline-block min-w-[84px] text-left font-semibold"
+            style={{ color: p, animation: "langWordFade 0.35s ease-in-out" }}
+          >
+            {languageWords[languageWordIndex]}
+          </span>
+        </p>
+
         <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 sm:mt-10 sm:text-sm">
           Entering chat
         </p>
       </div>
+      <style jsx>{`
+        @keyframes langWordFade {
+          from {
+            opacity: 0.2;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

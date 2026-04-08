@@ -34,8 +34,10 @@ export default function VoucherModal({
   embedded = false,
 }) {
   const [imgError, setImgError] = useState(false);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const theme = useChatTheme();
   const imgSrc = barcodeUrl || null;
+  const canOpenFullscreen = Boolean(imgSrc) && !imgError;
   const p = theme.primaryColor || "#2563eb";
   const header = theme.voucherHeaderBg || p;
   const borderColor = withAlpha(header, 0.25);
@@ -88,8 +90,13 @@ export default function VoucherModal({
 
           <button
             type="button"
-            className="group relative w-full cursor-pointer transition-all duration-300 hover:scale-[1.02]"
-            onClick={onViewFullscreen}
+            className={`group relative w-full transition-all duration-300 ${canOpenFullscreen ? "cursor-pointer hover:scale-[1.02]" : "cursor-default"}`}
+            onClick={() => {
+              if (!canOpenFullscreen) return;
+              onViewFullscreen?.();
+              setFullscreenOpen(true);
+            }}
+            aria-disabled={!canOpenFullscreen}
           >
             <div
               className="relative rounded-2xl border-2 p-1 shadow-lg"
@@ -218,6 +225,19 @@ export default function VoucherModal({
           </button>
         </div>
       </div>
+      {fullscreenOpen && canOpenFullscreen ? (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 p-4">
+          <button
+            type="button"
+            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+            onClick={() => setFullscreenOpen(false)}
+            aria-label="Close fullscreen voucher"
+          >
+            <i className="pi pi-times text-lg" />
+          </button>
+          <img src={imgSrc} alt="Barcode fullscreen" className="max-h-[90vh] max-w-[95vw] rounded-xl bg-white object-contain p-2" />
+        </div>
+      ) : null}
     </div>
   );
 
