@@ -3,6 +3,7 @@ import { searchSimilar } from "./supabaseMenu.repository.js";
 import { mergeChatTheme } from "./chatBranding.service.js";
 import * as sessionStore from "./aiChatSession.store.js";
 import { getAiStudioOpenAIClient, getChatModelId } from "./aiStudioOpenai.provider.js";
+import MenuItem from "../../../models/MenuItem.js";
 import {
   extractMenuRecommendationsFromAssistantText,
   inferMenuRecommendationsFromReply,
@@ -27,6 +28,44 @@ const LENGTH_GUIDANCE = {
   default: "Keep replies concise unless the user asks for more detail.",
   verbose: "You may give richer explanations when it helps the guest choose dishes or understand options.",
 };
+const RETRIEVAL_LIMIT = 5;
+const FALLBACK_CARD_LIMIT = 6;
+const CLARIFIER_HISTORY_LIMIT = 8;
+const CLARIFIER_MAX_TOKENS = 80;
+
+/**
+ * Clarify the user's latest message into a retrieval query using recent conversation.
+ * This is retrieval-only text (not shown to guest), used before embedding + vector similarity.
+ */
+async function clarifyQueryForRetrieval({ openai, model, priorMessages, userText }) {
+  const recent = (priorMessages || []).slice(-CLARIFIER_HISTORY_LIMIT).map((m) => ({
+    role: m.role === "assistant" ? "assistant" : "user",
+    content: String(m.content || ""),
+  }));
+  const messages = [
+    {
+      role: "system",
+      content:
+        "Rewrite the latest guest message into one concise retrieval query for restaurant menu lookup. " +
+        "Use conversation context to resolve pronouns/ellipsis. Keep dish names, cuisine, dietary needs, and constraints. " +
+        "No markdown, no bullets, no explanations. Output exactly one plain-text line.",
+    },
+    ...recent,
+    { role: "user", content: userText },
+  ];
+  try {
+    const rs = await openai.chat.completions.create({
+      model,
+      messages,
+      temperature: 0,
+      max_tokens: CLARIFIER_MAX_TOKENS,
+    });
+    const clarified = rs.choices[0]?.message?.content?.trim();
+    return clarified || userText;
+  } catch {
+    return userText;
+  }
+}
 
 function buildSystemPrompt(agent, restaurantName, contextBlock) {
   const theme = mergeChatTheme(agent.chatTheme || {});
@@ -119,13 +158,39 @@ function formatMenuContextRows(rows) {
     .map((r) => {
       const attrs = parseMenuCatalogAttributes(r);
       const id = attrs.menuItemId || "";
-      const img = normalizeMenuImageUrl(typeof attrs.imageUrl === "string" ? attrs.imageUrl : "");
+      const directImage = typeof r?.image_url === "string" ? r.image_url : "";
+      const attrsImage = typeof attrs.imageUrl === "string" ? attrs.imageUrl : "";
+      const img = normalizeMenuImageUrl(directImage || attrsImage);
       const header = `[menu_item_id: ${id}]`;
       const imgLine = img ? `Image URL (use when recommending): ${img}` : "Image URL (use when recommending): (none)";
       return [header, r.content, imgLine].join("\n");
     })
     .filter(Boolean)
     .join("\n---\n");
+}
+
+async function fillMissingRecommendationImages(menuRecommendations, restaurantId) {
+  if (!Array.isArray(menuRecommendations) || menuRecommendations.length === 0) return menuRecommendations;
+  const missingIds = menuRecommendations
+    .filter((r) => !normalizeMenuImageUrl(r.imageUrl))
+    .map((r) => r.menuItemId)
+    .filter(Boolean);
+  if (!missingIds.length) return menuRecommendations;
+
+  const docs = await MenuItem.find({ restaurantId, _id: { $in: missingIds } })
+    .select("_id image imageUrl")
+    .lean();
+  const imageById = new Map(
+    docs.map((d) => {
+      const raw = d?.image || d?.imageUrl || "";
+      return [String(d._id), normalizeMenuImageUrl(typeof raw === "string" ? raw : "")];
+    })
+  );
+
+  return menuRecommendations.map((r) => ({
+    ...r,
+    imageUrl: normalizeMenuImageUrl(r.imageUrl) || imageById.get(String(r.menuItemId)) || "",
+  }));
 }
 
 /**
@@ -137,15 +202,28 @@ export async function handleChatMessage(agent, userText, sessionId) {
   const restaurant = agent.restaurantId;
   const restaurantName =
     typeof restaurant === "object" && restaurant?.name ? restaurant.name : "our restaurant";
-  const rid =
+  const restaurantId =
     restaurant && typeof restaurant === "object" && restaurant._id
       ? restaurant._id.toString()
       : String(agent.restaurantId);
 
-  const [qEmb] = await embedTexts([userText]);
+  sessionStore.ensureSession(sessionId, { restaurantId, slug: agent.publicSlug });
+  const priorMessages = sessionStore.listMessages(sessionId);
+
+  const model = getChatModelId();
+  const openai = getAiStudioOpenAIClient();
+  const retrievalQuery = await clarifyQueryForRetrieval({
+    openai,
+    model,
+    priorMessages,
+    userText,
+  });
+
+  const [qEmb] = await embedTexts([retrievalQuery]);
   let contextRows = [];
   try {
-    contextRows = await searchSimilar(rid, qEmb, 8);
+    // Pure vector similarity retrieval: top-5 nearest menu rows.
+    contextRows = await searchSimilar(restaurantId, qEmb, RETRIEVAL_LIMIT);
   } catch (e) {
     console.error("[AI Chat] vector search failed", e.message);
   }
@@ -154,19 +232,16 @@ export async function handleChatMessage(agent, userText, sessionId) {
 
   const systemPrompt = buildSystemPrompt(agent, restaurantName, contextBlock);
 
-  sessionStore.ensureSession(sessionId, { restaurantId: rid, slug: agent.publicSlug });
-  const prior = sessionStore.listMessages(sessionId);
   const chatMessages = [
     { role: "system", content: systemPrompt },
-    ...prior.map((m) => ({ role: m.role, content: m.content })),
+    ...priorMessages.map((m) => ({ role: m.role, content: m.content })),
     { role: "user", content: userText },
   ];
 
-  const rs = agent.responseStyle === "concise" || agent.responseStyle === "verbose" ? agent.responseStyle : "default";
-  const maxTokens = rs === "verbose" ? 1100 : 800;
+  const responseStyle =
+    agent.responseStyle === "concise" || agent.responseStyle === "verbose" ? agent.responseStyle : "default";
+  const maxTokens = responseStyle === "verbose" ? 1100 : 800;
 
-  const model = getChatModelId();
-  const openai = getAiStudioOpenAIClient();
   const completion = await openai.chat.completions.create({
     model,
     messages: chatMessages,
@@ -181,8 +256,9 @@ export async function handleChatMessage(agent, userText, sessionId) {
     menuRecommendations = inferMenuRecommendationsFromReply(assistantContent, contextRows);
   }
   if (!menuRecommendations.length && contextRows.length && isBroadMenuIntentUserMessage(userText)) {
-    menuRecommendations = fallbackRecommendationsFromContextRows(contextRows, 6);
+    menuRecommendations = fallbackRecommendationsFromContextRows(contextRows, FALLBACK_CARD_LIMIT);
   }
+  menuRecommendations = await fillMissingRecommendationImages(menuRecommendations, restaurantId);
 
   sessionStore.appendMessage(sessionId, { role: "user", content: userText });
   sessionStore.appendMessage(sessionId, {

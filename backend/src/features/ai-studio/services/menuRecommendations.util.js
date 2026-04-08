@@ -90,9 +90,19 @@ export function extractMenuRecommendationsFromAssistantText(raw) {
             : typeof priceRaw === "string"
               ? Number.parseFloat(priceRaw)
               : NaN;
-        const imageUrl = normalizeMenuImageUrl(typeof x.imageUrl === "string" ? x.imageUrl : "");
+        const imageUrlRaw =
+          typeof x.imageUrl === "string"
+            ? x.imageUrl
+            : typeof x.image === "string"
+              ? x.image
+              : typeof x.img === "string"
+                ? x.img
+                : typeof x.photoUrl === "string"
+                  ? x.photoUrl
+                  : "";
+        const imageUrl = normalizeMenuImageUrl(imageUrlRaw);
         return {
-          menuItemId: String(x.menuItemId ?? "").slice(0, 64),
+          menuItemId: String(x.menuItemId ?? x.id ?? "").slice(0, 64),
           name: String(x.name).trim().slice(0, 200),
           price: Number.isFinite(price) ? price : 0,
           imageUrl,

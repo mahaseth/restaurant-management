@@ -29,12 +29,31 @@ function LineWithBold({ text }) {
   return parts.length ? parts : text;
 }
 
+function normalizeAssistantLine(line) {
+  let t = String(line || "");
+  // Remove visual junk often produced by LLM formatting.
+  t = t.replace(/^\s*\|\s*/, "");
+  t = t.replace(/^\s{2,}/, " ");
+  return t.trimEnd();
+}
+
+function lineKind(line) {
+  const t = line.trim();
+  if (!t) return "blank";
+  if (/^\d+[\.\)]\s+/.test(t)) return "ordered";
+  if (/^[-•]\s+/.test(t)) return "bullet";
+  return "text";
+}
+
 function MessageBubble({ m, theme, p, embedded }) {
   const menuCards =
     !m.isFromUser && Array.isArray(m.menuRecommendations) && m.menuRecommendations.length > 0
       ? m.menuRecommendations
       : null;
   const hasText = Boolean((m.content || "").trim());
+  const renderedLines = (m.content || "")
+    .split("\n")
+    .map((line) => (m.isFromUser ? line : normalizeAssistantLine(line)));
 
   return (
     <div className={`flex w-full flex-col gap-1.5 ${m.isFromUser ? "items-end" : "items-start"}`}>
@@ -55,15 +74,19 @@ function MessageBubble({ m, theme, p, embedded }) {
             boxShadow: m.isFromUser ? `0 8px 24px -8px ${hexAlpha(p, 0.45)}` : undefined,
           }}
         >
-          {m.content.split("\n").map((line, i) => {
-            const t = line.trim();
-            const isListLine = /^\d+\.\s/.test(t) || /^[-•]\s/.test(t);
+          {renderedLines.map((line, i) => {
+            const kind = lineKind(line);
+            if (kind === "blank") return <div key={i} className="h-1" />;
             return (
               <p
                 key={i}
                 className={
-                  i ? (isListLine ? "mt-1.5 border-l-2 border-slate-300/80 pl-3 dark:border-slate-600/80" : "mt-2") : isListLine
-                    ? "border-l-2 border-slate-300/80 pl-3 dark:border-slate-600/80"
+                  i
+                    ? kind === "ordered" || kind === "bullet"
+                      ? "mt-1.5 rounded-md bg-black/[0.03] px-2.5 py-1 dark:bg-white/[0.05]"
+                      : "mt-2"
+                    : kind === "ordered" || kind === "bullet"
+                      ? "rounded-md bg-black/[0.03] px-2.5 py-1 dark:bg-white/[0.05]"
                     : ""
                 }
               >

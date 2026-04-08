@@ -24,6 +24,10 @@ function displayImageSrc(url) {
 export default function MenuRecommendationCards({ items, theme, embedded = false }) {
   const [expandedUrl, setExpandedUrl] = useState(null);
   const p = theme?.primaryColor || "#2563eb";
+  const openImage = useCallback((url) => {
+    if (!url) return;
+    setExpandedUrl(url);
+  }, []);
 
   const onKey = useCallback((e) => {
     if (e.key === "Escape") setExpandedUrl(null);
@@ -62,7 +66,8 @@ export default function MenuRecommendationCards({ items, theme, embedded = false
               <button
                 type="button"
                 className="group relative h-[5.25rem] w-[5.25rem] shrink-0 overflow-hidden sm:h-[6rem] sm:w-[6rem]"
-                onClick={() => setExpandedUrl(src)}
+                onClick={() => openImage(src)}
+                onPointerUp={() => openImage(src)}
                 aria-label={`View ${it.name} full size`}
               >
                 <img src={src} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
@@ -85,6 +90,18 @@ export default function MenuRecommendationCards({ items, theme, embedded = false
                   ${formatPrice(Number(it.price))}
                 </p>
               ) : null}
+              {src ? (
+                <button
+                  type="button"
+                  className="mt-1 w-fit rounded-full border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  onClick={() => openImage(src)}
+                  onPointerUp={() => openImage(src)}
+                >
+                  Expand image
+                </button>
+              ) : (
+                <span className="mt-1 text-xs text-slate-400">No image available</span>
+              )}
             </div>
           </article>
           );

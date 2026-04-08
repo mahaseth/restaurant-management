@@ -4,8 +4,16 @@ import RestaurantAiAgent from "../../../models/RestaurantAiAgent.js";
 import { embedTexts } from "./embedding.service.js";
 import { replaceMenuRows } from "./supabaseMenu.repository.js";
 
+function resolveMenuItemImageUrl(item) {
+  const candidates = [item?.image, item?.imageUrl, item?.photoUrl, item?.img];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) return c.trim();
+  }
+  return "";
+}
+
 function rowContent(item) {
-  const image = typeof item.image === "string" && item.image.trim() ? item.image.trim() : "";
+  const image = resolveMenuItemImageUrl(item);
   const parts = [
     `Name: ${item.name}`,
     `Category: ${item.category}`,
@@ -18,7 +26,7 @@ function rowContent(item) {
 }
 
 function rowAttributes(item) {
-  const imageUrl = typeof item.image === "string" && item.image.trim() ? item.image.trim() : "";
+  const imageUrl = resolveMenuItemImageUrl(item);
   return {
     name: item.name,
     category: item.category,
@@ -48,6 +56,7 @@ export async function syncMenuForRestaurant(restaurantId) {
     menuItemId: item._id.toString(),
     content: contents[i],
     embedding: embeddings[i],
+    imageUrl: resolveMenuItemImageUrl(item),
     attributes: rowAttributes(item),
   }));
 
