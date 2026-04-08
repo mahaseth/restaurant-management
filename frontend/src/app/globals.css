@@ -1389,3 +1389,32 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   background: #0f172a;
 }
+
+/* GPTA-aligned guest chat: loading line + shimmer (see gpta/app/globals.css) */
+@keyframes gpta-shimmer-load {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(0.1);
+  }
+}
+@keyframes gpta-loading-line {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+.animate-gpta-loading-line {
+  animation: gpta-loading-line 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}

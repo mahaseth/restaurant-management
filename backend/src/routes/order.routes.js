@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
   createOrder, 
+  createOrderStaff,
   getOrdersByTable, 
   cancelOrderCustomer,
   getRecentOrdersStaff,
@@ -41,6 +42,14 @@ router.get(
   auth,
   roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER, ROLE_KITCHEN]),
   getRecentOrdersStaff
+);
+
+// Create walk-in / counter order (Staff)
+router.post(
+  "/staff",
+  auth,
+  roleBasedAuth([ROLE_OWNER, ROLE_ADMIN, ROLE_MANAGER, ROLE_CASHIER, ROLE_WAITER]),
+  createOrderStaff
 );
 
 // Get one order with details (All Staff)

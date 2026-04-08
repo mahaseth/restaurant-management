@@ -4,10 +4,16 @@
 // Central place for profile + account settings.
 // (Moved "My Account" from Staff page to here.)
 
-import React from "react";
+import React, { Suspense } from "react";
+import { useSelector } from "react-redux";
 import MyAccountPanel from "@/component/staff/MyAccountPanel";
+import StripeConnectPanel from "@/component/settings/StripeConnectPanel";
 
 const SettingPage = () => {
+  const auth = useSelector((state) => state.auth);
+  const currentUser = auth?.user?.user;
+  const isOwner = Array.isArray(currentUser?.roles) && currentUser.roles.includes("OWNER");
+
   return (
     <div className="flex flex-col gap-6 animate-fade-in-up">
       {/* ===== Page Header ===== */}
@@ -34,6 +40,13 @@ const SettingPage = () => {
 
       {/* ===== Account Settings ===== */}
       <MyAccountPanel />
+
+      {/* ===== Payment Settings (OWNER only) ===== */}
+      {isOwner && (
+        <Suspense fallback={null}>
+          <StripeConnectPanel />
+        </Suspense>
+      )}
     </div>
   );
 };

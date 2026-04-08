@@ -49,11 +49,30 @@ const orderSchema = new mongoose.Schema({
     index: true,
     trim: true,
   },
+  // Source/type of order (QR dine-in vs staff walk-in takeaway).
+  orderType: {
+    type: String,
+    enum: {
+      values: ["DINE_IN", "TAKEAWAY"],
+      message: "{VALUE} is not a valid order type",
+    },
+    default: "DINE_IN",
+    index: true,
+  },
   tableId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Table',
-    required: [true, 'Table ID is required'],
+    required: function requiredTableId() {
+      return this.orderType !== "TAKEAWAY";
+    },
     index: true
+  },
+  // For takeaway / counter orders
+  walkInName: {
+    type: String,
+    trim: true,
+    maxlength: [120, "Name cannot exceed 120 characters"],
+    default: "",
   },
   restaurantId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -152,6 +171,13 @@ const orderSchema = new mongoose.Schema({
     sparse: true, // Allow null values, but enforce uniqueness when present
     index: true
   },
+  // Stripe PaymentIntent ID — set when customer pays online before order is submitted
+  stripePaymentIntentId: {
+    type: String,
+    sparse: true,
+    index: true,
+    trim: true,
+  },
   // Metadata
   customerIP: {
     type: String,
@@ -190,6 +216,7 @@ const orderSchema = new mongoose.Schema({
 orderSchema.index({ tableId: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, status: 1, createdAt: -1 });
 orderSchema.index({ restaurantId: 1, paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ restaurantId: 1, orderType: 1, createdAt: -1 });
 
 const Order = mongoose.model('Order', orderSchema);
 

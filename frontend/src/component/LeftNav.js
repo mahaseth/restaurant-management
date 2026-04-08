@@ -9,6 +9,7 @@ import {
   STAFF_ROUTE,
   SETTINGS_ROUTE,
   TABLES_ROUTE,
+  AI_STUDIO_ROUTE,
 } from "@/constants/routes";
 import Logo from "@/component/Logo";
 import { useDispatch } from "react-redux";
@@ -28,6 +29,7 @@ const LeftNav = () => {
     { label: "Menu", icon: "pi pi-list", href: MENU_MANAGEMENT_ROUTE },
     { label: "Tables", icon: "pi pi-table", href: TABLES_ROUTE },
     { label: "Staff", icon: "pi pi-users", href: STAFF_ROUTE },
+    { label: "AI Studio", icon: "pi pi-sparkles", href: AI_STUDIO_ROUTE },
     { label: "Settings", icon: "pi pi-cog", href: SETTINGS_ROUTE },
   ];
 
@@ -42,7 +44,9 @@ const LeftNav = () => {
         {/* Navigation Links */}
         <nav className="flex-1 space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.href === AI_STUDIO_ROUTE && pathname?.startsWith("/ai-studio"));
             return (
               <Link
                 key={item.href}

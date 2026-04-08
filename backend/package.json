@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:ai": "node scripts/test-ai-integration.mjs",
+    "migrate:menu-catalog": "node scripts/run-menu-catalog-migration.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -23,9 +25,13 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.0.0",
     "multer": "^2.0.2",
+    "nanoid": "^5.1.7",
+    "openai": "^6.33.0",
     "pdfmake": "^0.2.20",
+    "pg": "^8.20.0",
     "qrcode": "^1.5.4",
     "resend": "^6.6.0",
+    "stripe": "^20.4.0",
     "zod": "^4.2.1"
   },
   "devDependencies": {

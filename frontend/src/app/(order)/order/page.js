@@ -24,8 +24,10 @@ import {
   getPublicOrderByNumber,
   getPublicTableInfo,
 } from "@/api/publicOrder";
+import { createPaymentIntent } from "@/api/payment";
 import ExistingOrderLookup from "@/component/order/ExistingOrderLookup";
 import OrderStartScreen from "@/component/order/OrderStartScreen";
+import PaymentDialog from "@/component/order/PaymentDialog";
 
 function formatMoney(value) {
   const num = Number(value);
@@ -103,6 +105,10 @@ const OrderPage = () => {
   const [placing, setPlacing] = useState(false);
 
   const [createdOrder, setCreatedOrder] = useState(null);
+
+  // Payment dialog state
+  const [paymentClientSecret, setPaymentClientSecret] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -189,7 +195,8 @@ const OrderPage = () => {
   const addOne = (id) => setQty(id, (cart[id] || 0) + 1);
   const removeOne = (id) => setQty(id, (cart[id] || 0) - 1);
 
-  const placeOrder = async () => {
+  // Step 1: validate cart and create a PaymentIntent — opens payment dialog.
+  const initiatePayment = async () => {
     if (!tableId || !restaurantId) {
       toast.error("Invalid QR link. Missing tableId or restaurantId.");
       return;
@@ -211,6 +218,33 @@ const OrderPage = () => {
 
     setPlacing(true);
     try {
+      const { clientSecret, amount } = await createPaymentIntent({
+        restaurantId,
+        tableId,
+        items,
+        customerEmail: String(customerEmail || "").trim(),
+      });
+      setPaymentClientSecret(clientSecret);
+      setPaymentAmount(amount);
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.response?.data || err?.message || "Failed to initiate payment.");
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  // Step 2: payment succeeded — now submit the order.
+  const handlePaymentSuccess = async (stripePaymentIntentId) => {
+    setPaymentClientSecret(null);
+
+    const items = cartLines.map((line) => ({
+      productId: line.item._id,
+      quantity: line.qty,
+      modifiers: [],
+    }));
+
+    setPlacing(true);
+    try {
       const order = await createOrderPublic({
         tableId,
         restaurantId,
@@ -218,14 +252,15 @@ const OrderPage = () => {
         notes: notes.trim(),
         customerEmail: String(customerEmail || "").trim(),
         clientOrderId: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined,
+        stripePaymentIntentId,
       });
       setCreatedOrder(order);
       setExistingOrderNumber(order?.orderNumber || "");
       setCart({});
       setNotes("");
-      toast.success(`Order placed. Order number: ${order?.orderNumber || "-"}`);
+      toast.success(`Payment confirmed. Order number: ${order?.orderNumber || "-"}`);
     } catch (err) {
-      toast.error(err?.response?.data?.error || err?.response?.data || err?.message || "Failed to place order.");
+      toast.error(err?.response?.data?.error || err?.response?.data || err?.message || "Payment received but order submission failed. Please show this to staff.");
     } finally {
       setPlacing(false);
     }
@@ -348,6 +383,7 @@ const OrderPage = () => {
   }
 
   return (
+    <>
     <div className="max-w-6xl mx-auto px-5 py-8 flex flex-col gap-6">
       <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -620,9 +656,9 @@ const OrderPage = () => {
 
             <div className="mt-4">
               <Button
-                label={placing ? "Saving..." : (existingOrder ? "Add Items" : "Place Order")}
-                icon="pi pi-check"
-                onClick={existingOrder ? addItemsToExistingOrder : placeOrder}
+                label={placing ? "Please wait…" : (existingOrder ? "Add Items" : "Pay & Order")}
+                icon={existingOrder ? "pi pi-check" : "pi pi-credit-card"}
+                onClick={existingOrder ? addItemsToExistingOrder : initiatePayment}
                 loading={placing}
                 raised
                 className="w-full"
@@ -678,6 +714,18 @@ const OrderPage = () => {
         </div>
       </div>
     </div>
+
+    {/* Payment dialog — shown when PaymentIntent is ready */}
+    {paymentClientSecret && (
+      <PaymentDialog
+        clientSecret={paymentClientSecret}
+        amount={paymentAmount}
+        cartLines={cartLines}
+        onSuccess={handlePaymentSuccess}
+        onClose={() => setPaymentClientSecret(null)}
+      />
+    )}
+    </>
   );
 };
 

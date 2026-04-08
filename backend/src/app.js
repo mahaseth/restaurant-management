@@ -15,6 +15,8 @@ import orderRoutes from "./routes/order.routes.js";
 import tableRoutes from "./routes/table.routes.js";
 import restaurantRoutes from "./routes/restaurant.routes.js";
 import publicRoutes from "./routes/public.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import aiStudioRoutes from "./features/ai-studio/aiStudio.routes.js";
 import multer from "multer";
 import connectCloudinary from "./config/cloudinary.js";
 import cors from "cors";
@@ -25,6 +27,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 try {
   await connectDB();
   connectCloudinary();
+
+  // Stripe webhook must receive the raw body for signature verification.
+  // This route must be registered BEFORE express.json() / bodyParser.json().
+  app.use(
+    "/api/payments/webhook",
+    express.raw({ type: "application/json" })
+  );
 
   app.use(bodyParser.json());
   app.use(logger);
@@ -39,6 +48,8 @@ try {
   app.use('/api/order', orderRoutes);
   app.use('/api/tables', auth, tableRoutes);
   app.use('/api/restaurant', auth, restaurantRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use("/api/ai-studio", auth, upload.single("image"), aiStudioRoutes);
 
   // Bind on all interfaces so the API is reachable from your phone over Wi-Fi
   // (e.g. http://192.168.x.x:5000). This also avoids some localhost IPv4/IPv6 quirks.
