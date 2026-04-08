@@ -9,6 +9,37 @@ function restaurantIdFromReq(req) {
   return req.restaurant?._id?.toString?.() || req.restaurant?._id;
 }
 
+function normalizeBaseUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const noSlash = raw.replace(/\/+$/, "");
+  if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(noSlash)) {
+    return `https://${noSlash}`;
+  }
+  return noSlash;
+}
+
+function originFromReferer(referer) {
+  const ref = String(referer || "").trim();
+  if (!ref) return "";
+  try {
+    const u = new URL(ref);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "";
+  }
+}
+
+export function resolveFrontendBaseUrl(req) {
+  const requestOrigin = normalizeBaseUrl(req?.headers?.origin);
+  if (requestOrigin) return requestOrigin;
+
+  const refererOrigin = normalizeBaseUrl(originFromReferer(req?.headers?.referer));
+  if (refererOrigin) return refererOrigin;
+
+  return normalizeBaseUrl(config.clientUrl);
+}
+
 export async function getStatus(req, res) {
   try {
     const rid = restaurantIdFromReq(req);
@@ -41,7 +72,7 @@ export async function getStatus(req, res) {
       });
     }
 
-    const baseUrl = (config.clientUrl || "").replace(/\/$/, "");
+    const baseUrl = resolveFrontendBaseUrl(req);
     const chatPath = `/ai-chat/${agent.publicSlug}`;
     const chatUrl = baseUrl ? `${baseUrl}${chatPath}` : chatPath;
 
@@ -92,7 +123,7 @@ export async function postProvision(req, res) {
       await agent.save();
     }
 
-    const baseUrl = (config.clientUrl || "").replace(/\/$/, "");
+    const baseUrl = resolveFrontendBaseUrl(req);
     const chatPath = `/ai-chat/${agent.publicSlug}`;
     const chatUrl = baseUrl ? `${baseUrl}${chatPath}` : chatPath;
 
