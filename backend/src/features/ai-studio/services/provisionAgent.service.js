@@ -49,5 +49,5 @@ export async function findAgentBySlug(publicSlug) {
 
 export async function findAgentByRestaurantId(restaurantId) {
   const rid = typeof restaurantId === "string" ? restaurantId : restaurantId.toString();
-  return RestaurantAiAgent.findOne({ restaurantId: rid });
+  return RestaurantAiAgent.findOne({ restaurantId: rid }).populate("restaurantId", "name");
 }

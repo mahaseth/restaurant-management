@@ -1,6 +1,28 @@
 import Table from '../models/Table.js';
 import Order from "../models/Order.js";
-import { generateTableQRCode } from '../utils/qrCode.js';
+import { generateUnifiedTableQRCode } from '../utils/qrCode.js';
+import { newUrlSafeToken } from '../utils/secureTokens.js';
+import * as tableChatSessionRepo from '../repositories/tableChatSession.repository.js';
+
+async function ensureTableQrToken(table) {
+  if (table.qrToken) return;
+  for (let i = 0; i < 8; i++) {
+    const t = newUrlSafeToken();
+    const clash = await Table.findOne({ qrToken: t }).lean();
+    if (!clash) {
+      table.qrToken = t;
+      return;
+    }
+  }
+  throw new Error('Could not allocate table QR token');
+}
+
+async function attachUnifiedTableQr(table, appUrl) {
+  await ensureTableQrToken(table);
+  const { qrDataUrl, qrLink } = await generateUnifiedTableQRCode(table.qrToken, { appUrl });
+  table.qrCode = qrDataUrl;
+  table.qrLink = qrLink;
+}
 
 /**
  * @desc Create a new table
@@ -24,12 +46,8 @@ export const createTable = async (req, res) => {
       status
     });
 
-    // Generate QR code using the new table's ID
-    // Use request Origin so QR matches how the admin UI was accessed
-    // (localhost vs LAN IP).
-    const { qrDataUrl, orderLink } = await generateTableQRCode(table._id, restaurantId, { appUrl: req.get("origin") });
-    table.qrCode = qrDataUrl;
-    table.qrLink = orderLink;
+    // Use request Origin so QR matches how the admin UI was accessed (localhost vs LAN IP).
+    await attachUnifiedTableQr(table, req.get("origin"));
 
     await table.save();
     res.status(201).json(table);
@@ -54,9 +72,7 @@ export const regenerateTableQr = async (req, res) => {
       return res.status(404).json({ error: "Table not found" });
     }
 
-    const { qrDataUrl, orderLink } = await generateTableQRCode(table._id, restaurantId, { appUrl: req.get("origin") });
-    table.qrCode = qrDataUrl;
-    table.qrLink = orderLink;
+    await attachUnifiedTableQr(table, req.get("origin"));
     await table.save();
 
     res.json(table);
@@ -171,6 +187,8 @@ export const deleteTable = async (req, res) => {
     if (!table) {
       return res.status(404).json({ error: 'Table not found' });
     }
+
+    await tableChatSessionRepo.deleteSessionsForTable(table._id);
 
     res.json({ message: 'Table deleted successfully' });
   } catch (error) {

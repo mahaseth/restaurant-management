@@ -41,3 +41,22 @@ export async function uploadAiVoucherBarcode(file) {
   const { data } = await postImageForm("/api/ai-studio/upload/voucher-barcode", file);
   return data;
 }
+
+/** @param {Record<string, string|number|boolean>} [params] limit, skip, confidence, fallbackUsed, from, to */
+export async function getAiEvalLogs(params) {
+  const { data } = await api.get("/api/ai-studio/evaluation/logs", { params });
+  return data;
+}
+
+/** @param {Record<string, string>} [params] from, to (ISO dates) */
+export async function getAiEvalSummary(params) {
+  const { data } = await api.get("/api/ai-studio/evaluation/summary", { params });
+  return data;
+}
+
+export async function patchAiEvalReview(logId, reviewLabel) {
+  const { data } = await api.patch(`/api/ai-studio/evaluation/logs/${encodeURIComponent(logId)}/review`, {
+    reviewLabel,
+  });
+  return data;
+}

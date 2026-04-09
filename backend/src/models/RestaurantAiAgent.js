@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 
 /**
- * One document per restaurant: public chat slug, branding, sync metadata, menu RAG target.
+ * One document per restaurant: stable internal slug (legacy id), branding, sync metadata, menu RAG target.
+ * Guest AI chat is table-QR + sessionToken only; publicSlug is not a supported entry path.
  */
 const restaurantAiAgentSchema = new mongoose.Schema(
   {
@@ -37,7 +38,7 @@ const restaurantAiAgentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
-    /** Display name shown on public chat header */
+    /** Display name shown on guest chat header */
     agentDisplayName: {
       type: String,
       default: "",

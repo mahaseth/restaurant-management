@@ -18,16 +18,9 @@ export async function getMenuItemById(id) {
   return response.data;
 }
 
-// Create a new menu item
-export async function createMenuItem({ name, description, price, category, available, image }) {
-  const response = await api.post(MENU_ENDPOINT, {
-    name,
-    description,
-    price,
-    category,
-    available,
-    image,
-  });
+// Create a new menu item (body may include optional RAG fields: ingredients, allergens, dietaryTags, spiceLevel, cuisineType)
+export async function createMenuItem(data) {
+  const response = await api.post(MENU_ENDPOINT, data);
   return response.data;
 }
 

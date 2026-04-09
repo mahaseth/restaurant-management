@@ -4,13 +4,37 @@
 // Pass `menuItem` prop to pre-fill the form when editing.
 // If `menuItem` is null, it means we're creating a new one.
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
+
+const MAX_LIST_ITEMS = 40;
+const MAX_LIST_ITEM_LEN = 120;
+
+/** Comma / newline / semicolon separated — matches backend list parsing behavior. */
+function parseListFromInput(raw) {
+  if (raw == null || typeof raw !== "string") return [];
+  return raw
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => s.slice(0, MAX_LIST_ITEM_LEN))
+    .slice(0, MAX_LIST_ITEMS);
+}
+
+function formatListForInput(arr) {
+  if (!Array.isArray(arr) || !arr.length) return "";
+  return arr
+    .map((s) => String(s ?? "").trim())
+    .filter(Boolean)
+    .map((s) => s.slice(0, MAX_LIST_ITEM_LEN))
+    .slice(0, MAX_LIST_ITEMS)
+    .join(", ");
+}
 
 // Category options with icons and colors
 const categoryOptions = [
@@ -42,6 +66,13 @@ const availabilityItemTemplate = (option) => (
   </div>
 );
 
+const spiceLevelOptions = [
+  { label: "Not specified", value: null },
+  { label: "Mild", value: "mild" },
+  { label: "Medium", value: "medium" },
+  { label: "Hot", value: "hot" },
+];
+
 const MenuItemFormDialog = ({
   visible,
   onHide,
@@ -62,15 +93,29 @@ const MenuItemFormDialog = ({
   const [category, setCategory] = useState("main");
   const [available, setAvailable] = useState(true);
   const [image, setImage] = useState("");
+  const [ingredientsText, setIngredientsText] = useState("");
+  const [allergensText, setAllergensText] = useState("");
+  const [dietaryTagsText, setDietaryTagsText] = useState("");
+  const [spiceLevel, setSpiceLevel] = useState(null);
+  const [cuisineType, setCuisineType] = useState("");
 
-  const initializeForm = () => {
-    if (menuItem) {
-      setName(menuItem.name || "");
-      setDescription(menuItem.description || "");
-      setPrice(menuItem.price ?? 0);
-      setCategory(menuItem.category || "main");
-      setAvailable(menuItem.available ?? true);
-      setImage(menuItem.image || "");
+  const menuItemRef = useRef(menuItem);
+  menuItemRef.current = menuItem;
+
+  const initializeForm = useCallback(() => {
+    const m = menuItemRef.current;
+    if (m) {
+      setName(m.name || "");
+      setDescription(m.description || "");
+      setPrice(m.price ?? 0);
+      setCategory(m.category || "main");
+      setAvailable(m.available ?? true);
+      setImage(m.image || "");
+      setIngredientsText(formatListForInput(m.ingredients));
+      setAllergensText(formatListForInput(m.allergens));
+      setDietaryTagsText(formatListForInput(m.dietaryTags));
+      setSpiceLevel(m.spiceLevel || null);
+      setCuisineType(m.cuisineType || "");
       return;
     }
     setName("");
@@ -79,14 +124,38 @@ const MenuItemFormDialog = ({
     setCategory("main");
     setAvailable(true);
     setImage("");
-  };
+    setIngredientsText("");
+    setAllergensText("");
+    setDietaryTagsText("");
+    setSpiceLevel(null);
+    setCuisineType("");
+  }, []);
+
+  // PrimeReact Dialog `onShow` can run before `menuItem` updates when opening edit.
+  // Re-init when the dialog opens or when switching to another item (`_id`), not on every parent re-render.
+  useEffect(() => {
+    if (!visible) return;
+    initializeForm();
+  }, [visible, menuItem?._id, initializeForm]);
 
   // Validation before saving
   const handleSubmit = () => {
     if (!name.trim()) return;
     if (price < 0) return;
     if (!category) return;
-    onSave({ name: name.trim(), description: description.trim(), price, category, available, image: image.trim() });
+    onSave({
+      name: name.trim(),
+      description: description.trim(),
+      price,
+      category,
+      available,
+      image: image.trim(),
+      ingredients: parseListFromInput(ingredientsText),
+      allergens: parseListFromInput(allergensText),
+      dietaryTags: parseListFromInput(dietaryTagsText),
+      spiceLevel: spiceLevel == null ? "" : spiceLevel,
+      cuisineType: cuisineType.trim(),
+    });
   };
 
   const handleChooseFile = () => {
@@ -159,10 +228,9 @@ const MenuItemFormDialog = ({
         </div>
       }
       visible={visible}
-      onShow={initializeForm}
       onHide={onHide}
       footer={footer}
-      style={{ width: "540px" }}
+      style={{ width: "580px" }}
       modal
       draggable={false}
     >
@@ -281,6 +349,85 @@ const MenuItemFormDialog = ({
             itemTemplate={availabilityItemTemplate}
             className="w-full"
           />
+        </div>
+
+        {/* Optional: richer data for AI search & guest safety */}
+        <div className="rounded-xl border border-violet-100 bg-violet-50/40 dark:border-violet-900/40 dark:bg-violet-950/20 px-3 py-3 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-200">
+            Dietary &amp; AI menu search
+          </p>
+          <p className="text-xs text-violet-900/70 dark:text-violet-300/80 -mt-2">
+            All optional. Helps the assistant answer questions about allergens, spice, and diet. Use commas or
+            line breaks between items (no need to press Enter per chip).
+          </p>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="ingredientsText" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Ingredients
+            </label>
+            <InputTextarea
+              id="ingredientsText"
+              value={ingredientsText}
+              onChange={(e) => setIngredientsText(e.target.value)}
+              placeholder="e.g. chicken, butter, cream, tomato, spices"
+              rows={2}
+              autoResize
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="allergensText" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Allergens
+            </label>
+            <InputTextarea
+              id="allergensText"
+              value={allergensText}
+              onChange={(e) => setAllergensText(e.target.value)}
+              placeholder="e.g. dairy, peanuts"
+              rows={2}
+              autoResize
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="dietaryTagsText" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Dietary tags
+            </label>
+            <InputTextarea
+              id="dietaryTagsText"
+              value={dietaryTagsText}
+              onChange={(e) => setDietaryTagsText(e.target.value)}
+              placeholder="e.g. vegetarian, vegan, gluten-free"
+              rows={2}
+              autoResize
+              className="w-full"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Spice level</label>
+              <Dropdown
+                value={spiceLevel}
+                options={spiceLevelOptions}
+                onChange={(e) => setSpiceLevel(e.value)}
+                placeholder="Not specified"
+                className="w-full"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="cuisineType" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Cuisine type
+              </label>
+              <InputText
+                id="cuisineType"
+                value={cuisineType}
+                onChange={(e) => setCuisineType(e.target.value)}
+                placeholder="e.g. Indian, Italian"
+                className="w-full"
+                maxLength={80}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Image URL */}

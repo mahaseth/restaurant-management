@@ -9,12 +9,27 @@
 
 ## 1. Module Overview
 
+### Unified table QR session (current primary flow)
+
+As of the **chat-based table QR** work, new tables use a **single guest URL** per table:
+
+1. **QR encodes:** `{frontend}/table/qr/{qrToken}` (exact host comes from the admin dashboard **`Origin`** when the table is created or QR is regenerated, so phone-on-Wi‑Fi and PC-on-localhost can both work if staff regenerate after switching networks).
+2. **Backend:** `GET /api/public/qr/:qrToken/session` returns a persistent **`sessionToken`**; the app routes to `/table/session/{sessionToken}`.
+3. **Guest experience:** One screen combines **AI menu assistant** (when the restaurant AI agent is enabled), **cart**, and **place order** against `/api/public/table-session/:sessionToken/*`.
+
+See **[Public Table Session API](api-specs/public-table-session.md)** for endpoints and **[Table Management API](api-specs/table.md)** for `qrToken` / `qrLink` / regenerate QR.
+
+**Ops / AI:** Embeddings and scripts: **[Scripts](scripts.md)**; env overview: **[Environment](environment.md)** and **`backend/.env.example`** (Supabase URI, OpenAI/Azure, optional `MENU_RAG_*`).
+
+---
+
 ### Purpose
 The Customer Ordering Module enables **contactless, self-service ordering** for restaurant customers through QR code scanning. Customers can:
 - Scan a QR code at their table
 - Browse the menu without authentication
 - Place orders directly from their mobile device
 - Track order status in real-time
+- *(Unified flow)* Chat with the menu assistant and use the same session for cart and checkout
 
 ### Problems It Solves
 - **Reduces wait times**: Customers order immediately without waiting for staff
@@ -25,18 +40,30 @@ The Customer Ordering Module enables **contactless, self-service ordering** for 
 
 ### Public Access Logic (No Login Required)
 
-#### QR Link Validation
-Each table has a unique QR code that is **automatically generated** by the backend upon table creation. It encodes a URL in the format:
+#### QR link validation (two patterns)
+
+**A) Unified session (new tables)**  
+QR encodes `{{FRONTEND_URL}}/table/qr/{qrToken}`. The app resolves **`sessionToken`** via the public API and then uses table-session routes (no `tableId` in the URL for the guest).
+
+**B) Legacy direct ordering**  
+Older material may still describe a URL such as:
 ```
 {{FRONTEND_URL}}/order?tableId=<UNIQUE_TABLE_ID>&restaurantId=<RESTAURANT_ID>
 ```
+Some public endpoints under `/api/public/table/...` and `/api/public/order/...` still support that style where deployed.
 
-**Validation Flow:**
-1. Customer scans QR code → Browser opens the URL
-2. Frontend extracts `tableId` and `restaurantId` from query parameters
+**Validation flow (unified):**
+1. Customer scans QR → browser opens `/table/qr/{qrToken}`
+2. Frontend calls `GET /api/public/qr/:qrToken/session`
+3. If valid → redirect to `/table/session/{sessionToken}` and load cart/chat/order UI
+4. If invalid → show an error (invalid or unknown table QR)
+
+**Validation flow (legacy):**
+1. Customer scans QR → browser opens URL with query params
+2. Frontend extracts `tableId` and `restaurantId`
 3. Backend validates table exists and belongs to the restaurant
-4. If valid → Display menu and allow ordering
-5. If invalid → Show error message "Invalid table"
+4. If valid → display menu and allow ordering
+5. If invalid → show error (e.g. invalid table)
 
 **Table ID Format:**
 - MongoDB ObjectId (24-character hexadecimal string)
@@ -91,18 +118,21 @@ Each table has a unique QR code that is **automatically generated** by the backe
    - Table 2 → `tableId: 507f1f77bcf86cd799439012`
    - etc.
 
-2. **QR Code Generation**: 
-   - Each table's QR code is **automatically generated** as a Base64 image when the table is created via the API.
-   - The QR encodes: `{{FRONTEND_URL}}/order?tableId=<ID>&restaurantId=<ID>`
-   - Staff can retrieve this image from the dashboard and print it for the physical table.
+2. **QR code generation**  
+   - **Unified (current):** Backend stores `qrToken` and builds `qrLink` → `{frontend}/table/qr/{qrToken}` (host from admin **`Origin`**). QR image is a Base64 PNG of that URL.  
+   - **Legacy:** Some docs still reference `{{FRONTEND_URL}}/order?tableId=…&restaurantId=…` for older flows.
 
-3. **Customer Scan**: `tableId` extracted from URL query parameter
+3. **Customer scan**  
+   - **Unified:** Opens `/table/qr/{qrToken}` → exchange for `sessionToken` → `/table/session/...`.  
+   - **Legacy:** `tableId` / `restaurantId` from query parameters.
 
 **Validation:**
 The backend performs strict validation on `tableId` format and existence before allowing any order placement or status retrieval.
 
 
 ### High-Level Architecture
+
+> **Unified table session today:** See **[System architecture](architecture.md)** for the current end-to-end diagram (guest → `/api/public` → MongoDB, optional Supabase RAG, LLM). The ASCII diagram below focuses on the **legacy** direct `tableId` + `POST /api/order` path; mentally extend it with a parallel branch for session-based cart/order under `/api/public/table-session/...`.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

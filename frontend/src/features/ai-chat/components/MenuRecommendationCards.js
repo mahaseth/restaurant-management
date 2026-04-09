@@ -21,7 +21,7 @@ function displayImageSrc(url) {
 /**
  * Dish recommendation strip (GPTA-style): thumbnail, name, price, tap to expand image.
  */
-export default function MenuRecommendationCards({ items, theme, embedded = false }) {
+export default function MenuRecommendationCards({ items, theme, embedded = false, onAddToCart = null }) {
   const [expandedUrl, setExpandedUrl] = useState(null);
   const p = theme?.primaryColor || "#2563eb";
   const openImage = useCallback((url) => {
@@ -102,6 +102,16 @@ export default function MenuRecommendationCards({ items, theme, embedded = false
               ) : (
                 <span className="mt-1 text-xs text-slate-400">No image available</span>
               )}
+              {typeof onAddToCart === "function" && it.menuItemId ? (
+                <button
+                  type="button"
+                  className="mt-2 w-full rounded-xl px-3 py-2 text-xs font-bold text-white shadow-md transition active:scale-[0.98]"
+                  style={{ background: p }}
+                  onClick={() => onAddToCart(it)}
+                >
+                  Add to cart
+                </button>
+              ) : null}
             </div>
           </article>
           );

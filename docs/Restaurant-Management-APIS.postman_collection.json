@@ -2,6 +2,7 @@
 	"info": {
 		"_postman_id": "b41191be-d4c8-42cd-bd99-fa9cb8b524c8",
 		"name": "Restaurant-Management-APIS",
+		"description": "Partial collection — not every route is represented. For unified table QR guest APIs and AI Studio, see docs/api-specs/public-table-session.md and docs/api-specs/ai-studio.md. Set collection variables qrToken, sessionToken, evalLogId where needed. Replace any sample login credentials before sharing.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
 		"_exporter_id": "4299206"
 	},
@@ -484,6 +485,170 @@
 			]
 		},
 		{
+			"name": "Public table session (guest, no auth)",
+			"item": [
+				{
+					"name": "Resolve QR to session",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/public/qr/{{qrToken}}/session"
+					},
+					"response": []
+				},
+				{
+					"name": "Session state",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/public/table-session/{{sessionToken}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Send chat message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"What vegetarian options do you have?\"\n}"
+						},
+						"url": "{{baseURL}}/api/public/table-session/{{sessionToken}}/chat/message"
+					},
+					"response": []
+				},
+				{
+					"name": "Get cart",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/public/table-session/{{sessionToken}}/cart"
+					},
+					"response": []
+				},
+				{
+					"name": "Add cart item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"menuItemId\": \"<menuItemObjectId>\",\n  \"quantity\": 1\n}"
+						},
+						"url": "{{baseURL}}/api/public/table-session/{{sessionToken}}/cart/items"
+					},
+					"response": []
+				},
+				{
+					"name": "Place order from session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"\",\n  \"clientOrderId\": \"<uuid>\"\n}"
+						},
+						"url": "{{baseURL}}/api/public/table-session/{{sessionToken}}/order"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AI Studio (auth cookie)",
+			"item": [
+				{
+					"name": "AI Studio status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/ai-studio/"
+					},
+					"response": []
+				},
+				{
+					"name": "Provision agent",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseURL}}/api/ai-studio/provision"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync menu to vector store",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "{{baseURL}}/api/ai-studio/sync-menu"
+					},
+					"response": []
+				},
+				{
+					"name": "Evaluation logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/api/ai-studio/evaluation/logs?limit=50",
+							"host": ["{{baseURL}}"],
+							"path": ["api", "ai-studio", "evaluation", "logs"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Evaluation summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseURL}}/api/ai-studio/evaluation/summary"
+					},
+					"response": []
+				},
+				{
+					"name": "Patch eval log review",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reviewLabel\": \"useful\"\n}"
+						},
+						"url": "{{baseURL}}/api/ai-studio/evaluation/logs/{{evalLogId}}/review"
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "home",
 			"request": {
 				"method": "GET",
@@ -491,6 +656,20 @@
 				"url": "{{baseURL}}"
 			},
 			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "qrToken",
+			"value": ""
+		},
+		{
+			"key": "sessionToken",
+			"value": ""
+		},
+		{
+			"key": "evalLogId",
+			"value": ""
 		}
 	],
 	"event": [

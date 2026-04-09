@@ -23,4 +23,6 @@ export const SETTINGS_ROUTE = "/settings";
 export const TABLES_ROUTE = "/tables";
 export const AI_STUDIO_ROUTE = "/ai-studio";
 export const AI_STUDIO_CHAT_DESIGN_ROUTE = "/ai-studio/chat-design";
-export const publicAiChatPath = (slug) => `/ai-chat/${slug}`;
+/** Unified guest table experience (chat + cart + order). */
+export const unifiedTableQrPath = (qrToken) => `/table/qr/${encodeURIComponent(qrToken)}`;
+export const unifiedTableSessionPath = (sessionToken) => `/table/session/${encodeURIComponent(sessionToken)}`;
