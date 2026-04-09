@@ -19,7 +19,7 @@ As of the **chat-based table QR** work, new tables use a **single guest URL** pe
 
 See **[Public Table Session API](api-specs/public-table-session.md)** for endpoints and **[Table Management API](api-specs/table.md)** for `qrToken` / `qrLink` / regenerate QR.
 
-**Ops / AI:** Menu embeddings for retrieval (`npm run resync:menu-embeddings` in `backend/`) and Supabase/pgvector env vars are documented in `backend/.env.example`.
+**Ops / AI:** Embeddings and scripts: **[Scripts](scripts.md)**; env overview: **[Environment](environment.md)** and **`backend/.env.example`** (Supabase URI, OpenAI/Azure, optional `MENU_RAG_*`).
 
 ---
 

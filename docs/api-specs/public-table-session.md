@@ -135,4 +135,6 @@ These endpoints power the **unified table experience**: AI menu chat (when the r
 
 - [Table Management API](table.md) — authenticated CRUD and QR generation.
 - [Menu Management API](menu.md) — admin menu CRUD; guests typically use **`GET /api/menuitems/public?restaurantId=`** from the table UI.
+- [AI Studio API](ai-studio.md) — provision agent, sync menu, evaluation logs for chat turns.
+- [Scripts](../scripts.md) — CLI resync of embeddings (`resync:menu-embeddings`).
 - Legacy public flows (`/api/public/table/:tableId`, order by number) remain for older links; new table QRs should use this session API.

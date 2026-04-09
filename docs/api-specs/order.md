@@ -1,6 +1,20 @@
 # Order Management API
 
-Base URL: `{{baseURL}}/api/order`
+## Guest orders from unified table session
+
+When the customer uses **table QR → `/table/session/...`**, checkout is **not** `POST /api/order` by default. The app calls:
+
+**Endpoint:** `POST {{baseURL}}/api/public/table-session/:sessionToken/order`
+
+**Authentication:** None (session token is the capability).
+
+**Behavior:** Creates an order from the session cart, links it to the session’s table/restaurant, clears the cart, and sets session order state. Returns **`409`** with code **`ACTIVE_ORDER_EXISTS`** if that session already has an active order.
+
+See [Public table session API](public-table-session.md) for the full guest flow.
+
+---
+
+Base URL (legacy / direct ordering): `{{baseURL}}/api/order`
 
 ### 1. Create Order
 **Endpoint:** `POST /`

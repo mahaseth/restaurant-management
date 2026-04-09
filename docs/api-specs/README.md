@@ -12,6 +12,7 @@ For **how services and data stores connect** (guest session, RAG, Mongo vs Supab
 - [Public Table Session API](public-table-session.md) - **Guest** QR flow: session, AI chat, cart, order (no auth).
 - [Restaurant Settings API](restaurant.md) - PAN/Registration management.
 - [Menu Management API](menu.md) - Menu items CRUD and public guest menu.
+- [AI Studio API](ai-studio.md) - Agent provision, menu sync, branding, uploads, table-chat evaluation logs.
 - [Order Management API](order.md) - Customer ordering and staff management.
 - [Bill Management API](bill.md) - Billing, Payments, and PDF Receipts.
 

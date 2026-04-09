@@ -142,9 +142,21 @@ sequenceDiagram
 - **Table UI height:** Chat uses flex + `min-h-0` + scroll region so the **composer** stays on screen on mobile (see `ChatShell`, table session page).
 - **Redux persist:** **`menu`** slice is **blacklisted** so cached menu rows do not hide new API fields (e.g. ingredients lists).
 
+### Legacy `/ai-chat/*` routes
+
+The Next.js app group **`app/(ai-chat)/`** may still expose URLs such as **`/ai-chat/qr/[qrToken]`** or **`/ai-chat/session/...`** for **redirects or bookmarks**. The **supported** guest path is **`/table/qr/[qrToken]`** → **`/table/session/[sessionToken]`** (see [Public table session](api-specs/public-table-session.md)). Prefer printing and sharing table QRs that use `/table/...` only.
+
 ---
 
-## 7. Deployment notes
+## 7. Tooling & configuration
+
+- **[Scripts](scripts.md)** — `npm run` targets (`resync:menu-embeddings`, backfill QR, migrations, eval samples).  
+- **[Environment variables](environment.md)** — Backend/frontend env overview; canonical list in `*.env.example`.  
+- **Postman:** [Restaurant-Management-APIS.postman_collection.json](Restaurant-Management-APIS.postman_collection.json) — partially maintained; newer flows are also described in `api-specs/` (see folder note in collection).
+
+---
+
+## 8. Deployment notes
 
 - **Backend** listens on **all interfaces** in dev (`0.0.0.0`) for phone testing; configure host/port via env in production.
 - **Frontend** `next dev` may set **`allowedDevOrigins`** for HMR from LAN IPs (dev-only; see `next.config.mjs`).
@@ -152,10 +164,13 @@ sequenceDiagram
 
 ---
 
-## 8. Related documentation
+## 9. Related documentation
 
 - [Public Table Session API](api-specs/public-table-session.md)
+- [AI Studio API](api-specs/ai-studio.md)
 - [Table Management API](api-specs/table.md)
+- [Order Management API](api-specs/order.md) (includes table-session checkout)
 - [Customer ordering module](customer-ordering-module.md) (legacy + unified narrative)
 - [RBAC policy](rbac-policy.md)
 - [API specs index](api-specs/README.md)
+- [Scripts](scripts.md) · [Environment](environment.md)

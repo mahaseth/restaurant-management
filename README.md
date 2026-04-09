@@ -82,6 +82,8 @@ Static UI files are in the `Design/` folder: `home.html`, `nav.html`, `sign-in.h
 ## Architecture
 
 - **[docs/architecture.md](docs/architecture.md)** — system context, unified table session, RAG, data stores, and repo layout.
+- **[docs/scripts.md](docs/scripts.md)** — backend `npm run` scripts (embeddings, QR backfill, migrations).
+- **[docs/environment.md](docs/environment.md)** — env overview; details in `backend/.env.example` and `frontend/.env.example`.
 
 ## Table QR guest flow (chat + cart + order)
 
