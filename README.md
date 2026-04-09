@@ -79,6 +79,10 @@ Static UI files are in the `Design/` folder: `home.html`, `nav.html`, `sign-in.h
 - If you want me to run the dev server and verify startup here, tell me and I'll run it.
 - The backend recommends Node.js v18 or later. An `.nvmrc` file is included in the `backend/` folder to make switching versions easy (`backend/.nvmrc`).
 
+## Architecture
+
+- **[docs/architecture.md](docs/architecture.md)** — system context, unified table session, RAG, data stores, and repo layout.
+
 ## Table QR guest flow (chat + cart + order)
 
 - Guests scan a table QR that opens **`/table/qr/{qrToken}`**, then the app exchanges it for a **`sessionToken`** and loads **`/table/session/{sessionToken}`** (AI chat when enabled, cart, place order).

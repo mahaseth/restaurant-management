@@ -2,6 +2,8 @@
 
 Detailed documentation for each API module.
 
+For **how services and data stores connect** (guest session, RAG, Mongo vs Supabase), see **[System architecture](../architecture.md)**.
+
 ## Modules
 
 - [Authentication API](auth.md) - Login, Registration, Password Reset.

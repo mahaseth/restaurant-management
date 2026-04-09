@@ -118,18 +118,21 @@ Some public endpoints under `/api/public/table/...` and `/api/public/order/...` 
    - Table 2 → `tableId: 507f1f77bcf86cd799439012`
    - etc.
 
-2. **QR Code Generation**: 
-   - Each table's QR code is **automatically generated** as a Base64 image when the table is created via the API.
-   - The QR encodes: `{{FRONTEND_URL}}/order?tableId=<ID>&restaurantId=<ID>`
-   - Staff can retrieve this image from the dashboard and print it for the physical table.
+2. **QR code generation**  
+   - **Unified (current):** Backend stores `qrToken` and builds `qrLink` → `{frontend}/table/qr/{qrToken}` (host from admin **`Origin`**). QR image is a Base64 PNG of that URL.  
+   - **Legacy:** Some docs still reference `{{FRONTEND_URL}}/order?tableId=…&restaurantId=…` for older flows.
 
-3. **Customer Scan**: `tableId` extracted from URL query parameter
+3. **Customer scan**  
+   - **Unified:** Opens `/table/qr/{qrToken}` → exchange for `sessionToken` → `/table/session/...`.  
+   - **Legacy:** `tableId` / `restaurantId` from query parameters.
 
 **Validation:**
 The backend performs strict validation on `tableId` format and existence before allowing any order placement or status retrieval.
 
 
 ### High-Level Architecture
+
+> **Unified table session today:** See **[System architecture](architecture.md)** for the current end-to-end diagram (guest → `/api/public` → MongoDB, optional Supabase RAG, LLM). The ASCII diagram below focuses on the **legacy** direct `tableId` + `POST /api/order` path; mentally extend it with a parallel branch for session-based cart/order under `/api/public/table-session/...`.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
