@@ -144,7 +144,7 @@ export default function ChatShell({
   /** GPTA-style: full viewport width, content column max-w-3xl — not a narrow phone card. */
   if (!embedded) {
     return (
-      <div className="relative z-10 flex min-h-0 flex-1 w-full flex-col font-sans antialiased leading-relaxed">
+      <div className="relative z-10 flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden font-sans antialiased leading-relaxed">
         <header
           className="shrink-0 border-b border-black/10 backdrop-blur-md"
           style={{
@@ -196,7 +196,7 @@ export default function ChatShell({
 
         <div
           ref={messagesContainerRef}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"
+          className="h-0 min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"
           style={{
             WebkitOverflowScrolling: "touch",
             background: "transparent",

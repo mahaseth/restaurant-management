@@ -14,7 +14,9 @@ function envFloat(name, fallback) {
 }
 
 export function getSimilarityThresholds(intent) {
-  const strict = Boolean(intent?.strictSafetyMode || intent?.ingredientFocus);
+  // Strict thresholds only when the guest states a personal allergy/intolerance — not for
+  // "vegetarian options", "does X contain dairy?", etc. Those still get careful LLM prompts.
+  const strict = Boolean(intent?.selfReportedAllergyOrIntolerance);
   if (strict) {
     return {
       high: envFloat("MENU_RAG_SIM_HIGH_STRICT", 0.7),
@@ -50,6 +52,12 @@ export function detectMenuQueryIntent(userText) {
   const recommendationIntent =
     /\b(recommend|suggestion|suggest|what\s+should|best|popular|good\s+for|try\b)\b/i.test(raw);
 
+  /** Guest says they cannot eat something / have an allergy — highest bar for canned fallback. */
+  const selfReportedAllergyOrIntolerance =
+    /\b(i\s*'?m\s+allergic|i\s+have\s+an?\s+allergy|i\s+can\s*'?t\s+eat|allergic\s+to|allergy\s+to|celiac|coeliac|lactose\s+intolerant)\b/i.test(
+      raw
+    );
+
   const strictSafetyMode = Boolean(allergenFocus || dietaryFocus);
 
   return {
@@ -57,6 +65,7 @@ export function detectMenuQueryIntent(userText) {
     dietaryFocus,
     ingredientFocus,
     recommendationIntent,
+    selfReportedAllergyOrIntolerance,
     strictSafetyMode,
   };
 }
@@ -88,10 +97,12 @@ export function computeRetrievalConfidence(contextRows, intent) {
 
 /**
  * When true, skip the LLM and return a canned safe reply (no dish hallucination path).
+ * We only hard-block on weak retrieval when the guest personally reports an allergy/intolerance;
+ * other diet/ingredient questions use the LLM with MENU CONTEXT + safety instructions.
  */
 export function shouldForceRetrievalFallback(confidence, intent) {
   if (confidence === "none") return true;
-  if (confidence === "low" && (intent.strictSafetyMode || intent.ingredientFocus)) return true;
+  if (confidence === "low" && intent.selfReportedAllergyOrIntolerance) return true;
   return false;
 }
 
@@ -112,7 +123,7 @@ export function buildMatchedMenuItemsSummary(rows) {
  * Canned copy in restaurant voice; avoids model invention when context is unsafe or missing.
  */
 export function buildFallbackAssistantText(intent) {
-  if (intent.strictSafetyMode || intent.ingredientFocus) {
+  if (intent.selfReportedAllergyOrIntolerance) {
     return (
       "We don't have enough clear information in our menu details here to answer that safely. " +
       "For allergies, ingredients, or special diets, please check with our staff before ordering — " +

@@ -5,6 +5,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchMenuItems, addMenuItem, editMenuItem, removeMenuItem, replaceMenuItemImage, removeMenuItemImage } from "./menuActions";
 
+function sameMenuItemId(a, b) {
+  if (a == null || b == null) return false;
+  return String(a) === String(b);
+}
+
 const menuSlice = createSlice({
   name: "menu",
   initialState: {
@@ -50,8 +55,8 @@ const menuSlice = createSlice({
         state.error = null;
       })
       .addCase(editMenuItem.fulfilled, (state, action) => {
-        const index = state.menuItems.findIndex(
-          (item) => item._id === action.payload._id
+        const index = state.menuItems.findIndex((item) =>
+          sameMenuItemId(item._id, action.payload._id)
         );
         if (index !== -1) {
           state.menuItems[index] = action.payload;
@@ -66,7 +71,9 @@ const menuSlice = createSlice({
         state.error = null;
       })
       .addCase(removeMenuItem.fulfilled, (state, action) => {
-        state.menuItems = state.menuItems.filter((item) => item._id !== action.payload);
+        state.menuItems = state.menuItems.filter(
+          (item) => !sameMenuItemId(item._id, action.payload)
+        );
       })
       .addCase(removeMenuItem.rejected, (state, action) => {
         state.error = action.payload;
@@ -77,7 +84,9 @@ const menuSlice = createSlice({
         state.error = null;
       })
       .addCase(replaceMenuItemImage.fulfilled, (state, action) => {
-        const index = state.menuItems.findIndex((item) => item._id === action.payload._id);
+        const index = state.menuItems.findIndex((item) =>
+          sameMenuItemId(item._id, action.payload._id)
+        );
         if (index !== -1) state.menuItems[index] = action.payload;
       })
       .addCase(replaceMenuItemImage.rejected, (state, action) => {
@@ -89,7 +98,9 @@ const menuSlice = createSlice({
         state.error = null;
       })
       .addCase(removeMenuItemImage.fulfilled, (state, action) => {
-        const index = state.menuItems.findIndex((item) => item._id === action.payload._id);
+        const index = state.menuItems.findIndex((item) =>
+          sameMenuItemId(item._id, action.payload._id)
+        );
         if (index !== -1) state.menuItems[index] = action.payload;
       })
       .addCase(removeMenuItemImage.rejected, (state, action) => {

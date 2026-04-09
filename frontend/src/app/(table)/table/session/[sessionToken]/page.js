@@ -434,7 +434,7 @@ export default function UnifiedTableSessionPage() {
       >
         <Background chatReady={chatReady} backgroundImageUrl={backgroundImageUrl} />
 
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <header className="shrink-0 border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur-md">
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
               <div className="min-w-0">
@@ -494,7 +494,7 @@ export default function UnifiedTableSessionPage() {
             </div>
           ) : null}
 
-          <div className="relative min-h-0 flex-1">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {chatReady ? (
               <ChatShell
                 agentName={agentName}

@@ -47,7 +47,7 @@ export const createTable = async (req, res) => {
     });
 
     // Use request Origin so QR matches how the admin UI was accessed (localhost vs LAN IP).
-    await attachUnifiedTableQr(table, { appUrl: req.get("origin") });
+    await attachUnifiedTableQr(table, req.get("origin"));
 
     await table.save();
     res.status(201).json(table);
@@ -72,7 +72,7 @@ export const regenerateTableQr = async (req, res) => {
       return res.status(404).json({ error: "Table not found" });
     }
 
-    await attachUnifiedTableQr(table, { appUrl: req.get("origin") });
+    await attachUnifiedTableQr(table, req.get("origin"));
     await table.save();
 
     res.json(table);

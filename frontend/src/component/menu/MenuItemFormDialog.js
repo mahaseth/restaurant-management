@@ -4,14 +4,37 @@
 // Pass `menuItem` prop to pre-fill the form when editing.
 // If `menuItem` is null, it means we're creating a new one.
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
-import { Chips } from "primereact/chips";
 import { Button } from "primereact/button";
+
+const MAX_LIST_ITEMS = 40;
+const MAX_LIST_ITEM_LEN = 120;
+
+/** Comma / newline / semicolon separated — matches backend list parsing behavior. */
+function parseListFromInput(raw) {
+  if (raw == null || typeof raw !== "string") return [];
+  return raw
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => s.slice(0, MAX_LIST_ITEM_LEN))
+    .slice(0, MAX_LIST_ITEMS);
+}
+
+function formatListForInput(arr) {
+  if (!Array.isArray(arr) || !arr.length) return "";
+  return arr
+    .map((s) => String(s ?? "").trim())
+    .filter(Boolean)
+    .map((s) => s.slice(0, MAX_LIST_ITEM_LEN))
+    .slice(0, MAX_LIST_ITEMS)
+    .join(", ");
+}
 
 // Category options with icons and colors
 const categoryOptions = [
@@ -70,25 +93,29 @@ const MenuItemFormDialog = ({
   const [category, setCategory] = useState("main");
   const [available, setAvailable] = useState(true);
   const [image, setImage] = useState("");
-  const [ingredients, setIngredients] = useState([]);
-  const [allergens, setAllergens] = useState([]);
-  const [dietaryTags, setDietaryTags] = useState([]);
+  const [ingredientsText, setIngredientsText] = useState("");
+  const [allergensText, setAllergensText] = useState("");
+  const [dietaryTagsText, setDietaryTagsText] = useState("");
   const [spiceLevel, setSpiceLevel] = useState(null);
   const [cuisineType, setCuisineType] = useState("");
 
-  const initializeForm = () => {
-    if (menuItem) {
-      setName(menuItem.name || "");
-      setDescription(menuItem.description || "");
-      setPrice(menuItem.price ?? 0);
-      setCategory(menuItem.category || "main");
-      setAvailable(menuItem.available ?? true);
-      setImage(menuItem.image || "");
-      setIngredients(Array.isArray(menuItem.ingredients) ? [...menuItem.ingredients] : []);
-      setAllergens(Array.isArray(menuItem.allergens) ? [...menuItem.allergens] : []);
-      setDietaryTags(Array.isArray(menuItem.dietaryTags) ? [...menuItem.dietaryTags] : []);
-      setSpiceLevel(menuItem.spiceLevel || null);
-      setCuisineType(menuItem.cuisineType || "");
+  const menuItemRef = useRef(menuItem);
+  menuItemRef.current = menuItem;
+
+  const initializeForm = useCallback(() => {
+    const m = menuItemRef.current;
+    if (m) {
+      setName(m.name || "");
+      setDescription(m.description || "");
+      setPrice(m.price ?? 0);
+      setCategory(m.category || "main");
+      setAvailable(m.available ?? true);
+      setImage(m.image || "");
+      setIngredientsText(formatListForInput(m.ingredients));
+      setAllergensText(formatListForInput(m.allergens));
+      setDietaryTagsText(formatListForInput(m.dietaryTags));
+      setSpiceLevel(m.spiceLevel || null);
+      setCuisineType(m.cuisineType || "");
       return;
     }
     setName("");
@@ -97,12 +124,19 @@ const MenuItemFormDialog = ({
     setCategory("main");
     setAvailable(true);
     setImage("");
-    setIngredients([]);
-    setAllergens([]);
-    setDietaryTags([]);
+    setIngredientsText("");
+    setAllergensText("");
+    setDietaryTagsText("");
     setSpiceLevel(null);
     setCuisineType("");
-  };
+  }, []);
+
+  // PrimeReact Dialog `onShow` can run before `menuItem` updates when opening edit.
+  // Re-init when the dialog opens or when switching to another item (`_id`), not on every parent re-render.
+  useEffect(() => {
+    if (!visible) return;
+    initializeForm();
+  }, [visible, menuItem?._id, initializeForm]);
 
   // Validation before saving
   const handleSubmit = () => {
@@ -116,9 +150,9 @@ const MenuItemFormDialog = ({
       category,
       available,
       image: image.trim(),
-      ingredients,
-      allergens,
-      dietaryTags,
+      ingredients: parseListFromInput(ingredientsText),
+      allergens: parseListFromInput(allergensText),
+      dietaryTags: parseListFromInput(dietaryTagsText),
       spiceLevel: spiceLevel == null ? "" : spiceLevel,
       cuisineType: cuisineType.trim(),
     });
@@ -194,7 +228,6 @@ const MenuItemFormDialog = ({
         </div>
       }
       visible={visible}
-      onShow={initializeForm}
       onHide={onHide}
       footer={footer}
       style={{ width: "580px" }}
@@ -324,33 +357,49 @@ const MenuItemFormDialog = ({
             Dietary &amp; AI menu search
           </p>
           <p className="text-xs text-violet-900/70 dark:text-violet-300/80 -mt-2">
-            All optional. Helps the assistant answer questions about allergens, spice, and diet.
+            All optional. Helps the assistant answer questions about allergens, spice, and diet. Use commas or
+            line breaks between items (no need to press Enter per chip).
           </p>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ingredients</label>
-            <Chips
-              value={ingredients}
-              onChange={(e) => setIngredients(e.value || [])}
-              placeholder="Type and press Enter"
+            <label htmlFor="ingredientsText" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Ingredients
+            </label>
+            <InputTextarea
+              id="ingredientsText"
+              value={ingredientsText}
+              onChange={(e) => setIngredientsText(e.target.value)}
+              placeholder="e.g. chicken, butter, cream, tomato, spices"
+              rows={2}
+              autoResize
               className="w-full"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Allergens</label>
-            <Chips
-              value={allergens}
-              onChange={(e) => setAllergens(e.value || [])}
+            <label htmlFor="allergensText" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Allergens
+            </label>
+            <InputTextarea
+              id="allergensText"
+              value={allergensText}
+              onChange={(e) => setAllergensText(e.target.value)}
               placeholder="e.g. dairy, peanuts"
+              rows={2}
+              autoResize
               className="w-full"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Dietary tags</label>
-            <Chips
-              value={dietaryTags}
-              onChange={(e) => setDietaryTags(e.value || [])}
+            <label htmlFor="dietaryTagsText" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Dietary tags
+            </label>
+            <InputTextarea
+              id="dietaryTagsText"
+              value={dietaryTagsText}
+              onChange={(e) => setDietaryTagsText(e.target.value)}
               placeholder="e.g. vegetarian, vegan, gluten-free"
+              rows={2}
+              autoResize
               className="w-full"
             />
           </div>

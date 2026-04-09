@@ -26,6 +26,8 @@ const storage =
 const persistConfig = {
   key: "root",
   storage,
+  // Menu is server-sourced; persisting it caused stale items (missing new API fields like ingredients).
+  blacklist: ["menu"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
