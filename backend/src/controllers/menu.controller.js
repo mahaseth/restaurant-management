@@ -2,6 +2,10 @@ import MenuItem from '../models/MenuItem.js';
 import mongoose from "mongoose";
 import uploadFile, { deleteCloudinaryFileByUrl } from "../utils/fileUploader.js";
 import { syncMenuAndUpdateAgentMeta } from "../features/ai-studio/services/menuSync.service.js";
+import {
+  sanitizeMenuItemWritePayload,
+  sanitizeMenuItemOptionalFields,
+} from "../utils/menuItemFields.util.js";
 
 /** Rebuild AI menu embeddings without blocking the HTTP response. */
 function scheduleMenuAiSync(restaurantId) {
@@ -32,7 +36,9 @@ export const getPublicMenuItems = async (req, res) => {
 
     // Only expose safe fields to customers.
     const items = await MenuItem.find({ restaurantId })
-      .select("name description price category available image restaurantId")
+      .select(
+        "name description price category available image restaurantId ingredients allergens dietaryTags spiceLevel cuisineType"
+      )
       .sort({ category: 1, name: 1 })
       .lean();
 
@@ -71,13 +77,24 @@ export const updateMenuItem = async (req, res) => {
             return res.status(404).json({ error: 'Menu item not found' });
         }
         
-        // Update the menu item
-        const menuItem = await MenuItem.findByIdAndUpdate(
-            req.params.id,
-            { ...req.body, updatedBy: req.user._id },
-            { new: true, runValidators: true }
-        );  
-        
+        let core;
+        let optional;
+        let unsetSpiceLevel;
+        try {
+          ({ core, optional, unsetSpiceLevel } = sanitizeMenuItemWritePayload(req.body));
+        } catch (ve) {
+          return res.status(400).json({ error: ve.message || "Invalid menu fields" });
+        }
+
+        const updatePayload = { ...core, ...optional, updatedBy: req.user._id };
+        const menuItem = unsetSpiceLevel
+          ? await MenuItem.findByIdAndUpdate(
+              req.params.id,
+              { $set: updatePayload, $unset: { spiceLevel: "" } },
+              { new: true, runValidators: true }
+            )
+          : await MenuItem.findByIdAndUpdate(req.params.id, updatePayload, { new: true, runValidators: true });
+
         scheduleMenuAiSync(restaurantId);
         res.json(menuItem);
     } catch (error) {
@@ -105,17 +122,25 @@ export const createMenuItem = async (req, res) => {
       });
     }
     
+    let optFields = {};
+    try {
+      ({ fields: optFields } = sanitizeMenuItemOptionalFields(req.body));
+    } catch (ve) {
+      return res.status(400).json({ error: ve.message || "Invalid menu fields" });
+    }
+
     const menuItem = new MenuItem({
       restaurantId,
       createdBy: req.user._id,
       name: name.trim(),
-      description: description ? description.trim() : '',
+      description: description ? description.trim() : "",
       price,
       category: category.toLowerCase(),
       available: req.body.available !== false,
-      image: req.body.image || ''
+      image: req.body.image || "",
+      ...optFields,
     });
-    
+
     await menuItem.save();
     scheduleMenuAiSync(restaurantId);
     res.status(201).json(menuItem);

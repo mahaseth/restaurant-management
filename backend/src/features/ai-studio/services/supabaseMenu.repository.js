@@ -75,5 +75,6 @@ export async function searchSimilar(restaurantId, queryEmbedding, limit = 5) {
     `,
     [vecStr, restaurantId, limit]
   );
+  // Detailed RAG debug (query, intent, confidence, fallback) is logged in restaurantChat.service.js when MENU_RAG_DEBUG is set.
   return rows;
 }

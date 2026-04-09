@@ -7,7 +7,11 @@
     "dev": "nodemon src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:ai": "node scripts/test-ai-integration.mjs",
-    "migrate:menu-catalog": "node scripts/run-menu-catalog-migration.mjs"
+    "migrate:menu-catalog": "node scripts/run-menu-catalog-migration.mjs",
+    "backfill:table-qr": "node scripts/backfill-table-qr-tokens.mjs",
+    "migrate:table-session-cart": "node scripts/migrate-table-session-cart.mjs",
+    "resync:menu-embeddings": "node scripts/resync-menu-embeddings.mjs",
+    "eval:table-chat": "node scripts/eval-table-chat-sample.mjs"
   },
   "engines": {
     "node": ">=18"

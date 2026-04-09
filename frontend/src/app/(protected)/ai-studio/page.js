@@ -10,9 +10,9 @@ import {
   syncMenuToVectorStore,
   patchAiBranding,
 } from "@/api/aiStudio";
-import { AI_STUDIO_CHAT_DESIGN_ROUTE } from "@/constants/routes";
-import config from "@/config/config";
+import { AI_STUDIO_CHAT_DESIGN_ROUTE, TABLES_ROUTE } from "@/constants/routes";
 import AgentBehaviorSection from "@/features/ai-studio/AgentBehaviorSection";
+import AiEvaluationPanel from "@/features/ai-studio/AiEvaluationPanel";
 
 const SECTIONS = [
   {
@@ -37,7 +37,13 @@ const SECTIONS = [
     id: "share",
     label: "Share",
     icon: "pi pi-qrcode",
-    blurb: "Guest link and QR for tables or signage.",
+    blurb: "Each table has one QR for chat (when AI is on), menu, cart, and ordering.",
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    icon: "pi pi-chart-bar",
+    blurb: "RAG retrieval logs, confidence, and fallbacks for research and tuning.",
   },
 ];
 
@@ -154,28 +160,6 @@ export default function AiStudioPage() {
     }
   };
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : config.apiUrl;
-  const chatUrl =
-    status?.chatUrl ||
-    (status?.publicSlug ? `${baseUrl.replace(/\/$/, "")}/ai-chat/${status.publicSlug}` : null);
-  const qrSrc =
-    chatUrl &&
-    `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(chatUrl)}`;
-
-  const copyChatUrl = async () => {
-    if (!chatUrl) return;
-    try {
-      await navigator.clipboard.writeText(chatUrl);
-      toast.success("Customer chat link copied");
-    } catch {
-      toast.error("Could not copy — copy the link manually");
-    }
-  };
-
-  const openChatInNewTab = () => {
-    if (!chatUrl) return;
-    window.open(chatUrl, "_blank", "noopener,noreferrer");
-  };
 
   const activeMeta = SECTIONS.find((s) => s.id === section) || SECTIONS[0];
 
@@ -205,7 +189,8 @@ export default function AiStudioPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">AI Studio</h1>
               <p className="mt-1 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base">
-                Set up your guest-facing assistant, tune how it speaks, design the chat screens, then share a link or QR.
+                Set up your guest-facing assistant, tune how it speaks, and design the chat screens guests see after scanning
+                their table&apos;s AI QR.
               </p>
             </div>
           </div>
@@ -360,45 +345,43 @@ export default function AiStudioPage() {
           </div>
         )}
 
+        {section === "evaluation" && <AiEvaluationPanel />}
+
         {section === "share" && (
           <div className="space-y-6">
-            {!provisioned || !chatUrl ? (
+            {!provisioned || !enabled ? (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/80 p-10 text-center dark:border-gray-600 dark:bg-gray-900/40">
-                <i className="pi pi-link mb-3 text-4xl text-gray-400" />
-                <p className="font-medium text-gray-800 dark:text-gray-200">Share link & QR appear after you enable the agent</p>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Complete <strong>Setup</strong> first, then come back here.</p>
+                <i className="pi pi-qrcode mb-3 text-4xl text-gray-400" />
+                <p className="font-medium text-gray-800 dark:text-gray-200">Table AI QR codes appear after the agent is on</p>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Complete <strong>Setup</strong> and ensure the agent is enabled, then open{" "}
+                  <strong>Tables</strong> to print the assistant QR for each table.
+                </p>
                 <Button label="Go to Setup" className="mt-6" type="button" onClick={() => setSection("setup")} />
               </div>
             ) : (
               <div className="rounded-2xl border border-gray-200/90 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900/50 sm:p-8">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Customer chat link & QR</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">How guests use the table QR</h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Guests open this URL or scan the code — same experience you design in Appearance.
+                      Each table has <strong>one QR code</strong>. Scanning it opens chat (when AI is on), menu browsing,
+                      cart, and ordering in a single session.
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" label="Copy link" icon="pi pi-copy" size="small" outlined onClick={copyChatUrl} />
-                    <Button type="button" label="Open" icon="pi pi-external-link" size="small" onClick={openChatInNewTab} />
-                  </div>
+                  <Link href={TABLES_ROUTE} className="shrink-0">
+                    <Button type="button" label="Open Tables" icon="pi pi-table" size="small" />
+                  </Link>
                 </div>
-                <p className="mt-4 break-all rounded-xl border border-gray-100 bg-slate-50 px-4 py-3 font-mono text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-200 sm:text-sm">
-                  {chatUrl}
+                <div className="mt-6 rounded-xl border border-violet-100 bg-violet-50/80 px-4 py-3 text-sm text-violet-950 dark:border-violet-900/40 dark:bg-violet-950/30 dark:text-violet-100">
+                  <i className="pi pi-info-circle mr-2" />
+                  Regenerate a table&apos;s QR in Tables if you change Wi‑Fi or domain so printed codes stay correct.
+                </div>
+                <p className="mt-6 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                  Guests can ask about dishes, allergens, and specials before ordering. The conversation stays on the
+                  device until they leave the chat or clear the session; refreshing the page keeps the thread as long as
+                  they use the same session link.
                 </p>
-                <div className="mt-8 flex flex-col items-start gap-8 sm:flex-row sm:items-center">
-                  {qrSrc && (
-                    <img
-                      src={qrSrc}
-                      alt="QR code to guest chat"
-                      className="h-52 w-52 rounded-2xl border border-gray-200 bg-white p-3 shadow-inner dark:border-gray-600"
-                    />
-                  )}
-                  <p className="max-w-md text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                    Print or display on table tents, menus, or window stickers. Guests can ask about dishes, allergens,
-                    and specials before ordering.
-                  </p>
-                </div>
               </div>
             )}
           </div>

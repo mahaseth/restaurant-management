@@ -45,7 +45,7 @@ function lineKind(line) {
   return "text";
 }
 
-function MessageBubble({ m, theme, p, embedded }) {
+function MessageBubble({ m, theme, p, embedded, onAddRecommendationToCart }) {
   const menuCards =
     !m.isFromUser && Array.isArray(m.menuRecommendations) && m.menuRecommendations.length > 0
       ? m.menuRecommendations
@@ -97,8 +97,16 @@ function MessageBubble({ m, theme, p, embedded }) {
         </div>
       ) : null}
       {menuCards ? (
-        <div className={embedded ? "w-full max-w-[95%]" : "w-full max-w-[88%] sm:max-w-[85%]"}>
-          <MenuRecommendationCards items={menuCards} theme={theme} embedded={embedded} />
+        <div
+          className={embedded ? "w-full max-w-[95%]" : "w-full max-w-[88%] sm:max-w-[85%]"}
+          data-menu-recs={onAddRecommendationToCart ? "1" : undefined}
+        >
+          <MenuRecommendationCards
+            items={menuCards}
+            theme={theme}
+            embedded={embedded}
+            onAddToCart={onAddRecommendationToCart}
+          />
         </div>
       ) : null}
     </div>
@@ -122,6 +130,10 @@ export default function ChatShell({
   embedded = false,
   /** Design-studio preview: show blurred background inside the phone (sibling Background is covered by opaque message area). */
   backgroundImageUrl = null,
+  /** When set, recommendation cards show an "Add to cart" control (table session). */
+  onAddRecommendationToCart = null,
+  /** Disable typing/sending (e.g. AI off for this venue). */
+  composerDisabled = false,
 }) {
   const theme = useChatTheme();
   const p = theme.primaryColor || "#2563eb";
@@ -192,7 +204,14 @@ export default function ChatShell({
         >
           <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
             {messages.map((m) => (
-              <MessageBubble key={m.messageId} m={m} theme={theme} p={p} embedded={false} />
+              <MessageBubble
+                key={m.messageId}
+                m={m}
+                theme={theme}
+                p={p}
+                embedded={false}
+                onAddRecommendationToCart={onAddRecommendationToCart}
+              />
             ))}
             {thinking ? (
               <div className="flex justify-start">
@@ -238,12 +257,12 @@ export default function ChatShell({
                     onSend(e);
                   }
                 }}
-                disabled={sending}
+                disabled={sending || composerDisabled}
                 style={{ color: "#0f172a", overflowY: "auto" }}
               />
               <button
                 type="submit"
-                disabled={sending || !messageInput.trim()}
+                disabled={sending || composerDisabled || !messageInput.trim()}
                 className="flex min-h-[44px] min-w-[88px] shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold text-white shadow-md transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-[96px]"
                 style={{
                   background: `linear-gradient(180deg, ${hexAlpha(p, 1)} 0%, ${hexAlpha(p, 0.88)} 100%)`,
@@ -336,7 +355,14 @@ export default function ChatShell({
           }}
         >
           {messages.map((m) => (
-            <MessageBubble key={m.messageId} m={m} theme={theme} p={p} embedded />
+            <MessageBubble
+              key={m.messageId}
+              m={m}
+              theme={theme}
+              p={p}
+              embedded
+              onAddRecommendationToCart={onAddRecommendationToCart}
+            />
           ))}
           {thinking && (
             <div className="flex items-center justify-start gap-2">
@@ -372,13 +398,13 @@ export default function ChatShell({
               title="Ask about the menu, prices, or dietary options."
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              disabled={sending || embedded}
-              readOnly
+              disabled={sending || embedded || composerDisabled}
+              readOnly={embedded || composerDisabled}
               style={{ color: "#0f172a" }}
             />
             <button
               type="submit"
-              disabled={sending || embedded}
+              disabled={sending || embedded || composerDisabled}
               className="flex min-h-[40px] min-w-[64px] shrink-0 items-center justify-center rounded-xl px-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               style={{
                 background: `linear-gradient(180deg, ${hexAlpha(p, 1)} 0%, ${hexAlpha(p, 0.88)} 100%)`,

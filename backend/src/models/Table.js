@@ -30,6 +30,14 @@ const tableSchema = new mongoose.Schema({
     default: "",
     trim: true,
   },
+  /** Opaque token for unified guest table session (chat + cart + order). */
+  qrToken: {
+    type: String,
+    trim: true,
+    sparse: true,
+    unique: true,
+    index: true,
+  },
   capacity: {
     type: Number,
     default: 4,

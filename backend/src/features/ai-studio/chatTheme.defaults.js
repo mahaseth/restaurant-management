@@ -1,5 +1,5 @@
 /**
- * Default public chat theme (aligned with GPTA ChatTheme shape; restaurant-oriented copy).
+ * Default guest (table QR) chat theme (aligned with GPTA ChatTheme shape; restaurant-oriented copy).
  */
 export const DEFAULT_CHAT_THEME = {
   brandName: "",

@@ -10,6 +10,7 @@ import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
+import { Chips } from "primereact/chips";
 import { Button } from "primereact/button";
 
 // Category options with icons and colors
@@ -42,6 +43,13 @@ const availabilityItemTemplate = (option) => (
   </div>
 );
 
+const spiceLevelOptions = [
+  { label: "Not specified", value: null },
+  { label: "Mild", value: "mild" },
+  { label: "Medium", value: "medium" },
+  { label: "Hot", value: "hot" },
+];
+
 const MenuItemFormDialog = ({
   visible,
   onHide,
@@ -62,6 +70,11 @@ const MenuItemFormDialog = ({
   const [category, setCategory] = useState("main");
   const [available, setAvailable] = useState(true);
   const [image, setImage] = useState("");
+  const [ingredients, setIngredients] = useState([]);
+  const [allergens, setAllergens] = useState([]);
+  const [dietaryTags, setDietaryTags] = useState([]);
+  const [spiceLevel, setSpiceLevel] = useState(null);
+  const [cuisineType, setCuisineType] = useState("");
 
   const initializeForm = () => {
     if (menuItem) {
@@ -71,6 +84,11 @@ const MenuItemFormDialog = ({
       setCategory(menuItem.category || "main");
       setAvailable(menuItem.available ?? true);
       setImage(menuItem.image || "");
+      setIngredients(Array.isArray(menuItem.ingredients) ? [...menuItem.ingredients] : []);
+      setAllergens(Array.isArray(menuItem.allergens) ? [...menuItem.allergens] : []);
+      setDietaryTags(Array.isArray(menuItem.dietaryTags) ? [...menuItem.dietaryTags] : []);
+      setSpiceLevel(menuItem.spiceLevel || null);
+      setCuisineType(menuItem.cuisineType || "");
       return;
     }
     setName("");
@@ -79,6 +97,11 @@ const MenuItemFormDialog = ({
     setCategory("main");
     setAvailable(true);
     setImage("");
+    setIngredients([]);
+    setAllergens([]);
+    setDietaryTags([]);
+    setSpiceLevel(null);
+    setCuisineType("");
   };
 
   // Validation before saving
@@ -86,7 +109,19 @@ const MenuItemFormDialog = ({
     if (!name.trim()) return;
     if (price < 0) return;
     if (!category) return;
-    onSave({ name: name.trim(), description: description.trim(), price, category, available, image: image.trim() });
+    onSave({
+      name: name.trim(),
+      description: description.trim(),
+      price,
+      category,
+      available,
+      image: image.trim(),
+      ingredients,
+      allergens,
+      dietaryTags,
+      spiceLevel: spiceLevel == null ? "" : spiceLevel,
+      cuisineType: cuisineType.trim(),
+    });
   };
 
   const handleChooseFile = () => {
@@ -162,7 +197,7 @@ const MenuItemFormDialog = ({
       onShow={initializeForm}
       onHide={onHide}
       footer={footer}
-      style={{ width: "540px" }}
+      style={{ width: "580px" }}
       modal
       draggable={false}
     >
@@ -281,6 +316,69 @@ const MenuItemFormDialog = ({
             itemTemplate={availabilityItemTemplate}
             className="w-full"
           />
+        </div>
+
+        {/* Optional: richer data for AI search & guest safety */}
+        <div className="rounded-xl border border-violet-100 bg-violet-50/40 dark:border-violet-900/40 dark:bg-violet-950/20 px-3 py-3 space-y-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-200">
+            Dietary &amp; AI menu search
+          </p>
+          <p className="text-xs text-violet-900/70 dark:text-violet-300/80 -mt-2">
+            All optional. Helps the assistant answer questions about allergens, spice, and diet.
+          </p>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Ingredients</label>
+            <Chips
+              value={ingredients}
+              onChange={(e) => setIngredients(e.value || [])}
+              placeholder="Type and press Enter"
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Allergens</label>
+            <Chips
+              value={allergens}
+              onChange={(e) => setAllergens(e.value || [])}
+              placeholder="e.g. dairy, peanuts"
+              className="w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Dietary tags</label>
+            <Chips
+              value={dietaryTags}
+              onChange={(e) => setDietaryTags(e.value || [])}
+              placeholder="e.g. vegetarian, vegan, gluten-free"
+              className="w-full"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Spice level</label>
+              <Dropdown
+                value={spiceLevel}
+                options={spiceLevelOptions}
+                onChange={(e) => setSpiceLevel(e.value)}
+                placeholder="Not specified"
+                className="w-full"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="cuisineType" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Cuisine type
+              </label>
+              <InputText
+                id="cuisineType"
+                value={cuisineType}
+                onChange={(e) => setCuisineType(e.target.value)}
+                placeholder="e.g. Indian, Italian"
+                className="w-full"
+                maxLength={80}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Image URL */}

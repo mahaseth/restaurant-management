@@ -4,6 +4,14 @@ import RestaurantAiAgent from "../../../models/RestaurantAiAgent.js";
 import { embedTexts } from "./embedding.service.js";
 import { replaceMenuRows } from "./supabaseMenu.repository.js";
 
+const CATEGORY_DISPLAY = {
+  appetizer: "Appetizer",
+  main: "Main Course",
+  dessert: "Dessert",
+  drink: "Drink",
+  side: "Side",
+};
+
 function resolveMenuItemImageUrl(item) {
   const candidates = [item?.image, item?.imageUrl, item?.photoUrl, item?.img];
   for (const c of candidates) {
@@ -12,17 +20,40 @@ function resolveMenuItemImageUrl(item) {
   return "";
 }
 
-function rowContent(item) {
+function categoryDisplay(cat) {
+  return CATEGORY_DISPLAY[cat] || cat || "Unknown";
+}
+
+/**
+ * Rich plain text for embedding + model context (one block per dish).
+ */
+export function buildMenuItemEmbeddingText(item) {
   const image = resolveMenuItemImageUrl(item);
   const parts = [
-    `Name: ${item.name}`,
-    `Category: ${item.category}`,
-    `Price: ${item.price}`,
-    `Available: ${item.available ? "yes" : "no"}`,
-    `Description: ${item.description || ""}`,
-    image ? `Image URL: ${image}` : "Image URL: (none)",
+    `${item.name}.`,
+    `Category: ${categoryDisplay(item.category)}.`,
+    `Description: ${String(item.description || "").trim() || "—"}.`,
   ];
-  return parts.join("\n");
+
+  const ing = Array.isArray(item.ingredients) && item.ingredients.length ? item.ingredients.join(", ") : "";
+  if (ing) parts.push(`Ingredients: ${ing}.`);
+
+  const alg = Array.isArray(item.allergens) && item.allergens.length ? item.allergens.join(", ") : "";
+  if (alg) parts.push(`Allergens: ${alg}.`);
+
+  const dt = Array.isArray(item.dietaryTags) && item.dietaryTags.length ? item.dietaryTags.join(", ") : "";
+  if (dt) parts.push(`Dietary tags: ${dt}.`);
+
+  if (item.spiceLevel) parts.push(`Spice level: ${item.spiceLevel}.`);
+
+  const cuis = typeof item.cuisineType === "string" && item.cuisineType.trim();
+  if (cuis) parts.push(`Cuisine: ${cuis.trim()}.`);
+
+  parts.push(`Price: ${item.price}.`);
+  parts.push(`Available: ${item.available ? "yes" : "no"}.`);
+  parts.push(image ? `Image URL: ${image}` : "Image URL: (none)");
+
+  return parts.join(" ");
 }
 
 function rowAttributes(item) {
@@ -34,11 +65,16 @@ function rowAttributes(item) {
     available: item.available,
     menuItemId: item._id?.toString?.() ?? String(item._id),
     imageUrl,
+    ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+    allergens: Array.isArray(item.allergens) ? item.allergens : [],
+    dietaryTags: Array.isArray(item.dietaryTags) ? item.dietaryTags : [],
+    spiceLevel: item.spiceLevel || null,
+    cuisineType: typeof item.cuisineType === "string" ? item.cuisineType : "",
   };
 }
 
 /**
- * Full replace of vectorized menu for a restaurant.
+ * Full replace of vectorized menu for a restaurant (overwrites existing vectors).
  */
 export async function syncMenuForRestaurant(restaurantId) {
   const rid = typeof restaurantId === "string" ? restaurantId : restaurantId.toString();
@@ -48,7 +84,7 @@ export async function syncMenuForRestaurant(restaurantId) {
     return { rowCount: 0 };
   }
 
-  const contents = items.map(rowContent);
+  const contents = items.map((it) => buildMenuItemEmbeddingText(it));
   const embeddings = await embedTexts(contents);
 
   const rows = items.map((item, i) => ({

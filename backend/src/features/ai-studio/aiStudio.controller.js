@@ -58,6 +58,7 @@ export async function getStatus(req, res) {
           menuRowCount: 0,
           chatUrl: null,
           qrUrl: null,
+          guestChatViaTableQr: false,
           agentDisplayName: "",
           avatarUrl: "",
           backgroundImageUrl: "",
@@ -72,10 +73,6 @@ export async function getStatus(req, res) {
       });
     }
 
-    const baseUrl = resolveFrontendBaseUrl(req);
-    const chatPath = `/ai-chat/${agent.publicSlug}`;
-    const chatUrl = baseUrl ? `${baseUrl}${chatPath}` : chatPath;
-
     return res.json({
       success: true,
       data: {
@@ -85,8 +82,9 @@ export async function getStatus(req, res) {
         lastMenuSyncAt: agent.lastMenuSyncAt,
         lastMenuSyncError: agent.lastMenuSyncError || "",
         menuRowCount: agent.menuRowCount ?? 0,
-        chatUrl,
-        qrUrl: chatUrl,
+        chatUrl: null,
+        qrUrl: null,
+        guestChatViaTableQr: true,
         agentDisplayName: agent.agentDisplayName || "",
         avatarUrl: agent.avatarUrl || "",
         backgroundImageUrl: agent.backgroundImageUrl || "",
@@ -123,17 +121,14 @@ export async function postProvision(req, res) {
       await agent.save();
     }
 
-    const baseUrl = resolveFrontendBaseUrl(req);
-    const chatPath = `/ai-chat/${agent.publicSlug}`;
-    const chatUrl = baseUrl ? `${baseUrl}${chatPath}` : chatPath;
-
     res.json({
       success: true,
       data: {
         publicSlug: agent.publicSlug,
         enabled: agent.enabled,
-        chatUrl,
-        qrUrl: chatUrl,
+        chatUrl: null,
+        qrUrl: null,
+        guestChatViaTableQr: true,
       },
     });
   } catch (e) {

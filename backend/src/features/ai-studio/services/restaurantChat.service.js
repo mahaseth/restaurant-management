@@ -1,7 +1,6 @@
 import { embedTexts } from "./embedding.service.js";
 import { searchSimilar } from "./supabaseMenu.repository.js";
 import { mergeChatTheme } from "./chatBranding.service.js";
-import * as sessionStore from "./aiChatSession.store.js";
 import { getAiStudioOpenAIClient, getChatModelId } from "./aiStudioOpenai.provider.js";
 import MenuItem from "../../../models/MenuItem.js";
 import {
@@ -12,6 +11,14 @@ import {
   fallbackRecommendationsFromContextRows,
   isBroadMenuIntentUserMessage,
 } from "./menuRecommendations.util.js";
+import { applyRetrievalKeywordBoost } from "./menuRetrievalBoost.util.js";
+import {
+  detectMenuQueryIntent,
+  computeRetrievalConfidence,
+  shouldForceRetrievalFallback,
+  buildMatchedMenuItemsSummary,
+  buildFallbackAssistantText,
+} from "./menuRagConfidence.util.js";
 
 const TONE_GUIDANCE = {
   professional: "Use a polished, professional tone appropriate for hospitality.",
@@ -29,6 +36,8 @@ const LENGTH_GUIDANCE = {
   verbose: "You may give richer explanations when it helps the guest choose dishes or understand options.",
 };
 const RETRIEVAL_LIMIT = 5;
+/** Fetch extra neighbors from pgvector, then keyword-boost and trim to RETRIEVAL_LIMIT. */
+const RETRIEVAL_PREFETCH = 12;
 const FALLBACK_CARD_LIMIT = 6;
 const CLARIFIER_HISTORY_LIMIT = 8;
 const CLARIFIER_MAX_TOKENS = 80;
@@ -67,7 +76,8 @@ async function clarifyQueryForRetrieval({ openai, model, priorMessages, userText
   }
 }
 
-function buildSystemPrompt(agent, restaurantName, contextBlock) {
+function buildSystemPrompt(agent, restaurantName, contextBlock, promptOptions = {}) {
+  const { weakRetrievalGuidance = false, strictIntentFocus = false } = promptOptions;
   const theme = mergeChatTheme(agent.chatTheme || {});
   const discountOn = Boolean(theme.discountEnabled);
   const pct = theme.discountPercent || "5%";
@@ -79,12 +89,25 @@ function buildSystemPrompt(agent, restaurantName, contextBlock) {
 
   let prompt = `You are a restaurant assistant for "${restaurantName}". You speak on behalf of the restaurant team.
 
+GROUNDING (required):
+- Treat the MENU CONTEXT block as the only source of truth for specific dishes, prices, availability, ingredients, allergens, dietary tags, spice level, and cuisine type.
+- Do not invent menu items, prices, or ingredients. If something is not in the MENU CONTEXT, do not claim we serve it.
+- If ingredient, allergen, or dietary information is missing from the MENU CONTEXT for a dish, say it is not shown in our menu details here — never guess, infer, or imply safety.
+- Recommendations must be grounded in retrieved lines (names, tags, ingredients). Prefer dishes clearly supported by the context.
+
 MENU FACTS:
-- Use only the MENU CONTEXT below when discussing specific dishes, prices, availability, or ingredients.
+- Use only the MENU CONTEXT below when discussing specific dishes, prices, availability, ingredients, allergens, dietary tags, spice level, or cuisine type.
 - Do not invent items or prices not supported by the context.
 - If the context does not mention something, do not claim it exists. Frame limits in our voice: what we offer vs. what is not on our menu or not available here — not as a generic "I don't know" or "I don't have information."
 - Avoid phrases like "I don't have information about that," "I don't have access to…," or "As an AI…." Instead use warm, first-plural wording, for example: we're not serving that right now / that's not on our menu / we'd suggest asking our team when you're here / here's what we do have that might work.
 - When unsure or the menu context is thin, invite the guest to check with staff on site rather than apologizing with empty disclaimers.
+
+ALLERGENS, DIETARY & SAFETY:
+- Treat allergen and ingredient information as safety-critical. Only state allergens or ingredients that appear explicitly in the MENU CONTEXT for that dish.
+- If the guest asks about allergens (e.g. peanuts, dairy, gluten) or dietary needs (e.g. vegan, halal) and the MENU CONTEXT does not list that information for a dish, say clearly that those details are not shown on our menu here and they should confirm with our staff before ordering — do not guess or assume.
+- Never state or imply that a dish is "safe" for an allergy or diet unless the MENU CONTEXT explicitly supports it (e.g. listed allergens/tags/ingredients). When in doubt, defer to staff.
+- For dietary recommendations (vegetarian, gluten-free, etc.), only suggest dishes whose MENU CONTEXT lines include matching dietary tags or clearly support the claim from listed ingredients. If nothing matches, say we don't have a labeled option in context and offer staff assistance.
+- Never invent spice level, cuisine, allergens, or dietary tags — if missing from context, acknowledge that it is not available in the menu data we have.
 
 RESTAURANT VOICE (we / us / our):
 - Prefer "we," "our," and "us" when talking about the restaurant, food, hours, policies, and recommendations. Sound like a helpful member of the team, not a detached chatbot.
@@ -97,10 +120,9 @@ LANGUAGE BEHAVIOR:
 
 ORDERING & "WHAT'S NEXT":
 - When the guest asks what to do next, how to order, or how to place an order after they've picked dishes (e.g. "what next?", "how do I order?", "I've chosen X"), answer in our team voice.
-- Explain that they can place the order by scanning the QR code on their table to order from their table (when your venue offers table QR ordering), and/or they can flag down one of our friendly staff and ask them to place the order.
-- Do not imply this chat places orders; ordering is via table QR or staff unless operator rules below say otherwise.
-- Keep it warm and short; do not invent apps, phone numbers, or URLs unless they appear in MENU CONTEXT or operator rules.
-- When the guest has already selected dishes (or clearly indicates a choice), proactively advise the next step: scan the table QR code to place the order for the recommended items.
+- Explain that they can add items to their cart and tap Place order on this same table session screen, and/or flag down our staff to order.
+- Do not imply you submit payments or create orders yourself; the guest uses the cart and order buttons in the app. Do not invent apps, phone numbers, or URLs unless they appear in MENU CONTEXT or operator rules.
+- When the guest has chosen dishes, nudge them to add favorites to the cart from the recommendation cards or menu and place the order when ready.
 
 MENU IMAGES & DISH CARDS (guest chat UI):
 - MENU CONTEXT entries include [menu_item_id: …] and an "Image URL (use when recommending):" line. Copy those URLs exactly into the JSON trailer so thumbnails load.
@@ -157,6 +179,22 @@ DISCOUNT / VOUCHER RULES:
 - Do not promise items that are not in the menu context.`;
   }
 
+  if (strictIntentFocus) {
+    prompt += `
+
+STRICT MODE (this turn):
+- The guest asked about allergens, dietary restrictions, or ingredients. Follow ALLERGENS, DIETARY & SAFETY above with zero tolerance for guessing.
+- If MENU CONTEXT does not clearly answer the question, say our menu details don't show that here and ask them to confirm with staff before ordering.`;
+  }
+
+  if (weakRetrievalGuidance) {
+    prompt += `
+
+RETRIEVAL QUALITY (this turn):
+- The menu rows below may be only loosely related to the guest's question. Do not claim a specific dish exists unless it clearly appears in the MENU CONTEXT.
+- If their question targets something not reflected in the context (e.g. a dish type we don't list), say it's not showing in our menu information here and suggest staff help.`;
+  }
+
   return prompt;
 }
 
@@ -174,6 +212,23 @@ function formatMenuContextRows(rows) {
     })
     .filter(Boolean)
     .join("\n---\n");
+}
+
+function buildAssistantUiMetadata(menuRecommendations) {
+  const hasRecs = Array.isArray(menuRecommendations) && menuRecommendations.length > 0;
+  const suggestedActions = [
+    { id: "view_cart", label: "View cart", action: "VIEW_CART" },
+    { id: "place_order", label: "Place order", action: "PLACE_ORDER" },
+    { id: "order_status", label: "Order status", action: "ORDER_STATUS" },
+  ];
+  if (hasRecs) {
+    suggestedActions.unshift({ id: "focus_menu", label: "Menu picks", action: "FOCUS_RECOMMENDATIONS" });
+  }
+  const quickReplies = [
+    { label: "Popular dishes", prompt: "What are your most popular dishes?" },
+    { label: "Something light", prompt: "What would you recommend that's light or healthy?" },
+  ];
+  return { suggestedActions, quickReplies };
 }
 
 async function fillMissingRecommendationImages(menuRecommendations, restaurantId) {
@@ -203,9 +258,12 @@ async function fillMissingRecommendationImages(menuRecommendations, restaurantId
 /**
  * @param {import("mongoose").Document} agent
  * @param {string} userText
- * @param {string} sessionId
+ * @param {{
+ *   listPriorTurns: () => Promise<Array<{ role: string, content: string }>>,
+ *   persistExchange: (userText: string, assistantPayload: { content: string, menuRecommendations?: unknown[], suggestedActions?: unknown[], quickReplies?: unknown[] }) => Promise<void>
+ * }} persistence
  */
-export async function handleChatMessage(agent, userText, sessionId) {
+export async function handleChatMessage(agent, userText, persistence) {
   const restaurant = agent.restaurantId;
   const restaurantName =
     typeof restaurant === "object" && restaurant?.name ? restaurant.name : "our restaurant";
@@ -214,8 +272,8 @@ export async function handleChatMessage(agent, userText, sessionId) {
       ? restaurant._id.toString()
       : String(agent.restaurantId);
 
-  sessionStore.ensureSession(sessionId, { restaurantId, slug: agent.publicSlug });
-  const priorMessages = sessionStore.listMessages(sessionId);
+  const priorMessages = await persistence.listPriorTurns();
+  const queryIntent = detectMenuQueryIntent(userText);
 
   const model = getChatModelId();
   const openai = getAiStudioOpenAIClient();
@@ -229,15 +287,68 @@ export async function handleChatMessage(agent, userText, sessionId) {
   const [qEmb] = await embedTexts([retrievalQuery]);
   let contextRows = [];
   try {
-    // Pure vector similarity retrieval: top-5 nearest menu rows.
-    contextRows = await searchSimilar(restaurantId, qEmb, RETRIEVAL_LIMIT);
+    const fetched = await searchSimilar(restaurantId, qEmb, RETRIEVAL_PREFETCH);
+    const boosted = applyRetrievalKeywordBoost(fetched, retrievalQuery, userText);
+    contextRows = boosted.slice(0, RETRIEVAL_LIMIT);
   } catch (e) {
     console.error("[AI Chat] vector search failed", e.message);
   }
 
+  const confidenceState = computeRetrievalConfidence(contextRows, queryIntent);
+  const matchedMenuItems = buildMatchedMenuItemsSummary(contextRows);
+  const fallbackUsed = shouldForceRetrievalFallback(confidenceState.confidence, queryIntent);
+
+  if (process.env.MENU_RAG_DEBUG) {
+    console.log(
+      "[menu RAG]",
+      JSON.stringify({
+        userQuery: userText.slice(0, 500),
+        retrievalQuery: retrievalQuery.slice(0, 500),
+        queryIntent,
+        confidence: confidenceState.confidence,
+        topSimilarity: confidenceState.topSimilarity,
+        thresholds: confidenceState.thresholds,
+        fallbackUsed,
+        matchedMenuItems,
+      })
+    );
+  }
+
+  const retrievalPayload = {
+    confidence: confidenceState.confidence,
+    fallbackUsed,
+    matchedMenuItems,
+    queryIntent,
+    retrievalQuery,
+    topSimilarity: confidenceState.topSimilarity,
+    thresholdsUsed: confidenceState.thresholds,
+  };
+
+  if (fallbackUsed) {
+    const assistantContent = buildFallbackAssistantText(queryIntent);
+    const ui = buildAssistantUiMetadata([]);
+    const assistantPayload = {
+      content: assistantContent,
+      ...ui,
+    };
+    await persistence.persistExchange(userText, assistantPayload);
+
+    return {
+      assistantMessage: {
+        content: assistantContent,
+        messageId: Date.now(),
+        ...ui,
+      },
+      retrieval: retrievalPayload,
+    };
+  }
+
   const contextBlock = formatMenuContextRows(contextRows);
 
-  const systemPrompt = buildSystemPrompt(agent, restaurantName, contextBlock);
+  const systemPrompt = buildSystemPrompt(agent, restaurantName, contextBlock, {
+    weakRetrievalGuidance: confidenceState.confidence === "low",
+    strictIntentFocus: Boolean(queryIntent.strictSafetyMode || queryIntent.ingredientFocus),
+  });
 
   const chatMessages = [
     { role: "system", content: systemPrompt },
@@ -267,18 +378,21 @@ export async function handleChatMessage(agent, userText, sessionId) {
   }
   menuRecommendations = await fillMissingRecommendationImages(menuRecommendations, restaurantId);
 
-  sessionStore.appendMessage(sessionId, { role: "user", content: userText });
-  sessionStore.appendMessage(sessionId, {
-    role: "assistant",
+  const ui = buildAssistantUiMetadata(menuRecommendations);
+  const assistantPayload = {
     content: assistantContent,
     ...(menuRecommendations.length ? { menuRecommendations } : {}),
-  });
+    ...ui,
+  };
+  await persistence.persistExchange(userText, assistantPayload);
 
   return {
     assistantMessage: {
       content: assistantContent,
       messageId: Date.now(),
       ...(menuRecommendations.length ? { menuRecommendations } : {}),
+      ...ui,
     },
+    retrieval: retrievalPayload,
   };
 }
