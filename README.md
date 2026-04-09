@@ -79,6 +79,13 @@ Static UI files are in the `Design/` folder: `home.html`, `nav.html`, `sign-in.h
 - If you want me to run the dev server and verify startup here, tell me and I'll run it.
 - The backend recommends Node.js v18 or later. An `.nvmrc` file is included in the `backend/` folder to make switching versions easy (`backend/.nvmrc`).
 
+## Table QR guest flow (chat + cart + order)
+
+- Guests scan a table QR that opens **`/table/qr/{qrToken}`**, then the app exchanges it for a **`sessionToken`** and loads **`/table/session/{sessionToken}`** (AI chat when enabled, cart, place order).
+- Public HTTP API: **`/api/public/qr/:qrToken/session`** and **`/api/public/table-session/:sessionToken/*`** — see [docs/api-specs/public-table-session.md](docs/api-specs/public-table-session.md).
+- Admin table APIs: [docs/api-specs/table.md](docs/api-specs/table.md) (`qrToken`, `qrLink`, regenerate QR). Set **`CLIENT_URL`** / open the dashboard from the same host guests will use so QR links are correct.
+- Menu retrieval for AI: optional Supabase + embeddings; run **`npm run resync:menu-embeddings`** from `backend/` after large menu changes (env vars in `backend/.env.example`).
+
 ## Frontend — Run locally
 
 1. Open a terminal and change to the frontend folder:
@@ -109,3 +116,5 @@ npm install
 ```bash
 npm run dev
 ```
+
+By default the dev server listens on **all interfaces** (`0.0.0.0`) so phones on the same Wi‑Fi can open the app. For HMR from a LAN IP, `frontend/next.config.mjs` may list **`allowedDevOrigins`** entries (dev-only; adjust to your machine’s IP).

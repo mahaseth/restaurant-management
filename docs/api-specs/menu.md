@@ -2,6 +2,15 @@
 
 Base URL: `{{baseURL}}/api/menuitems`
 
+### Public menu (guest / table session UI)
+
+**Endpoint:** `GET /public?restaurantId=<ObjectId>`  
+**Authentication:** None.
+
+Returns menu items for the given restaurant (used by the unified table session and public ordering UIs). Shape aligns with server rules for guest-safe fields (e.g. availability, pricing, optional ingredients/allergens/dietary tags when present).
+
+---
+
 ### 1. Get All Menu Items
 **Endpoint:** `GET /`
 **Description:** Fetches all menu items. (Public)
