@@ -24,6 +24,7 @@ import {
 // Dialogs
 import MenuItemFormDialog from "@/component/menu/MenuItemFormDialog";
 import DeleteMenuItemDialog from "@/component/menu/DeleteMenuItemDialog";
+import { formatMoney } from "@/utils/formatMoney";
 
 // =====================
 // Category config
@@ -237,8 +238,10 @@ const MenuManagementPage = () => {
   const totalItems = menuItems.length;
   const availableItems = menuItems.filter((i) => i.available).length;
   const unavailableItems = menuItems.filter((i) => !i.available).length;
-  const avgPrice = totalItems > 0
-    ? (menuItems.reduce((s, i) => s + (i.price || 0), 0) / totalItems).toFixed(2) : "0.00";
+  const avgPriceNum =
+    totalItems > 0
+      ? menuItems.reduce((s, i) => s + (i.price || 0), 0) / totalItems
+      : 0;
 
   const summaryCards = [
     { label: "Total Dishes", value: totalItems, icon: "pi pi-book", emoji: "📋",
@@ -250,7 +253,7 @@ const MenuManagementPage = () => {
     { label: "Unavailable", value: unavailableItems, icon: "pi pi-times-circle", emoji: "⏸️",
       gradient: "from-red-500 to-rose-600", glow: "rgba(239,68,68,0.35)",
       accent: "border-l-red-500" },
-    { label: "Avg. Price", value: `$${avgPrice}`, icon: "pi pi-dollar", emoji: "💰",
+    { label: "Avg. Price", value: formatMoney(avgPriceNum), icon: "pi pi-wallet", emoji: "💰",
       gradient: "from-cyan-500 to-teal-500", glow: "rgba(6,182,212,0.35)",
       accent: "border-l-cyan-500" },
   ];
@@ -374,7 +377,7 @@ const MenuManagementPage = () => {
             <div className="absolute bottom-3 left-3">
               <span className="menu-price-3d inline-flex items-center px-3 py-1.5 rounded-lg
                               text-sm font-extrabold">
-                ${item.price?.toFixed(2)}
+                {formatMoney(item.price)}
               </span>
             </div>
 

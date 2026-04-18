@@ -18,6 +18,7 @@ import { Skeleton } from "primereact/skeleton";
 
 import { getOrderByIdStaff, getRecentOrdersStaffByWindow, updateOrderPaymentStatusStaff, updateOrderStatusStaff } from "@/api/order";
 import OrderDetailsDialog from "@/component/orders/OrderDetailsDialog";
+import { formatMoneyOrDash } from "@/utils/formatMoney";
 
 const STATUS_FILTERS = [
   { label: "All", value: "" },
@@ -30,11 +31,7 @@ const STATUS_FILTERS = [
   { label: "Cancelled", value: "CANCELLED" },
 ];
 
-function formatMoney(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "-";
-  return `$${num.toFixed(2)}`;
-}
+const formatMoney = formatMoneyOrDash;
 
 function shortId(id) {
   if (!id) return "-";
@@ -109,7 +106,7 @@ const OrdersPage = () => {
     { label: "Orders", value: total, icon: "pi pi-receipt", gradient: "from-blue-500 to-indigo-600", accent: "border-l-blue-500" },
     { label: "Pending", value: pending, icon: "pi pi-clock", gradient: "from-amber-500 to-orange-500", accent: "border-l-amber-500" },
     { label: "In Progress", value: inProgress, icon: "pi pi-spinner", gradient: "from-sky-500 to-cyan-600", accent: "border-l-sky-500" },
-    { label: "Revenue", value: formatMoney(revenue), icon: "pi pi-dollar", gradient: "from-emerald-500 to-teal-600", accent: "border-l-emerald-500" },
+    { label: "Revenue", value: formatMoney(revenue), icon: "pi pi-wallet", gradient: "from-emerald-500 to-teal-600", accent: "border-l-emerald-500" },
   ];
 
   // Templates

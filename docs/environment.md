@@ -4,7 +4,7 @@ Do **not** commit real `.env` files. Copy from the examples and set values per e
 
 | File | Purpose |
 |------|---------|
-| **`backend/.env.example`** | API, MongoDB, JWT, Cloudinary, Stripe, **AI (OpenAI / Azure)**, **Supabase** (`SUPABASE_DATABASE_URL`), optional **MENU_RAG_** tuning. |
+| **`backend/.env.example`** | API, MongoDB, JWT, Cloudinary, Stripe, **AI (OpenAI / Azure)**, **Supabase** (`SUPABASE_DATABASE_URL`), optional **`MENU_RAG_DEBUG`**. |
 | **`frontend/.env.example`** | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_NAME`. |
 
 ## Backend (summary)
@@ -17,7 +17,7 @@ Do **not** commit real `.env` files. Copy from the examples and set values per e
 - **`STRIPE_*`** — Payments and webhooks when enabled.  
 - **AI — Azure *or* OpenAI:** Set either Azure (`AZURE_OPENAI_*`, `AZURE_RESOURCE_NAME`, deployments) or `OPENAI_API_KEY` (+ optional `OPENAI_CHAT_MODEL`). Embeddings must match what `embedding.service` expects.  
 - **`SUPABASE_DATABASE_URL`** — Postgres connection string for **pgvector** menu rows (not the Supabase anon REST key).  
-- **`MENU_RAG_DEBUG`**, **`MENU_RAG_SIM_*`** — Optional retrieval tuning; strict similarity bands apply when the **guest message** matches self-reported allergy/intolerance patterns (see `menuRagConfidence.util.js` and `.env.example`).
+- **`MENU_RAG_DEBUG`** — Optional: log per-turn RAG fields (query, `topSimilarity`, matched item ids). Embeddings are not used to block or short-circuit the main reply (see `menuRagConfidence.util.js`, `.env.example`).
 
 ## Frontend (summary)
 

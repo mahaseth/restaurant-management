@@ -10,6 +10,7 @@ export function inferSuccessHeuristic({ confidence, fallbackUsed }) {
   if (fallbackUsed) return "fallback_or_weak";
   if (confidence === "high") return "likely_ok";
   if (confidence === "low") return "uncertain";
+  if (confidence === "none") return "uncertain";
   return "fallback_or_weak";
 }
 

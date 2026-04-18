@@ -9,6 +9,7 @@ import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
+import { formatMoneyOrDash } from "@/utils/formatMoney";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "PENDING", icon: "pi pi-clock", color: "text-amber-500" },
@@ -27,11 +28,7 @@ const statusItemTemplate = (option) => (
   </div>
 );
 
-function formatMoney(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "-";
-  return `$${num.toFixed(2)}`;
-}
+const formatMoney = formatMoneyOrDash;
 
 const OrderDetailsDialog = ({
   visible,

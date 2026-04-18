@@ -2,11 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { hexAlpha } from "../utils/brandingPalette";
-
-function formatPrice(n) {
-  if (typeof n !== "number" || Number.isNaN(n)) return "";
-  return n % 1 === 0 ? String(n) : n.toFixed(2);
-}
+import { formatMoney } from "@/utils/formatMoney";
 
 /** Match backend normalizeMenuImageUrl — Cloudinary / Supabase / protocol-relative. */
 function displayImageSrc(url) {
@@ -87,7 +83,7 @@ export default function MenuRecommendationCards({ items, theme, embedded = false
               <p className="truncate text-[15px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{it.name}</p>
               {it.price != null && it.price !== "" ? (
                 <p className="text-sm font-medium tabular-nums" style={{ color: p }}>
-                  ${formatPrice(Number(it.price))}
+                  {formatMoney(it.price)}
                 </p>
               ) : null}
               {src ? (
