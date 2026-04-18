@@ -377,10 +377,12 @@ export async function getOrderStatus(req, res) {
       return res.status(404).json({ success: false, error: "Session not found." });
     }
     const bits = await orderService.getOrderStatusForSession(session);
+    const tableDoc = await Table.findById(session.tableId).lean();
     res.json({
       success: true,
       data: {
         ...bits,
+        tableNumber: tableDoc?.tableNumber ?? null,
         pendingChatResetAt: publicRenewal.pendingChatResetAt,
         tableChatRevision: publicRenewal.tableChatRevision,
         chatJustCleared: publicRenewal.chatJustCleared,

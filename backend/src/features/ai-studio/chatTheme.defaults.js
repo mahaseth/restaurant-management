@@ -71,15 +71,13 @@ export const DEFAULT_CHAT_THEME = {
   introDiscountTitle: "Exclusive {discountPercent} off",
   introDiscountBody: "Chat with me to receive an exclusive {discountPercent} discount voucher!",
   introCouponTitle: "How to get your coupon",
-  introCouponBody: "Tap {endChatLabel} when you're ready to see your voucher.",
-
-  endChatLabel: "End Chat",
+  introCouponBody: "Mention the chat discount to a team member when you are ready to use your voucher.",
 
   discountEnabled: false,
   discountPercent: "5%",
   voucherHeading: "Thank you!",
   voucherBody: "We hope you enjoy your visit.",
-  voucherBannerLabel: "End chat to receive your discount voucher",
+  voucherBannerLabel: "Mention the chat discount to staff for your voucher",
   couponPageHeading: "Your Voucher",
   couponPageSubtext: "Show this to staff to claim your discount.",
 };

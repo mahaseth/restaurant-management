@@ -89,8 +89,8 @@ function buildSystemPrompt(agent, restaurantName, contextBlock, promptOptions = 
   let displayNameSection = "";
   if (displayName) {
     displayNameSection = agent.omitAgentName
-      ? `\nThe chat UI labels this assistant "${displayName}". Do not refer to yourself by name in replies.\n`
-      : `\nYou are introduced to guests as "${displayName}". Stay consistent with that identity when appropriate.\n`;
+      ? `\nIDENTITY: The label "${displayName}" in the chat is this assistant's name, not the restaurant or brand. The business you represent is "${restaurantName}". Do not use "${displayName}" as the venue, company, or product brand. Do not refer to yourself by name in replies (as configured).\n`
+      : `\nIDENTITY: "${displayName}" is the chat assistant's own name (your persona in this app), not the restaurant. The business you speak for is "${restaurantName}". If these differ, never use "${displayName}" as the shop, brand, or company name. Use "we/our" for the venue "${restaurantName}"; use "${displayName}" only as yourself when a short "I" fit is natural — not as a business or trademark.\n`;
   }
 
   const story = typeof agent.brandStory === "string" ? agent.brandStory.trim() : "";
@@ -183,7 +183,7 @@ LISTING MULTIPLE DISHES (required):
 
 DISCOUNT / VOUCHER RULES:
 - The restaurant offers an exclusive discount (${pct}) for customers using this chat, as described in the theme.
-- Explain how to get the voucher: the user should tap "${theme.endChatLabel || "End Chat"}" when they are done; a voucher screen will appear.
+- There is no "end chat" or separate voucher button in the guest app: explain that they claim the benefit with the team (e.g. mention the discount to staff, as in the theme copy).
 - To receive voucher benefits, tell the guest to call a friendly staff member and claim the discount voucher; our team will assist with the claim.
 - If relevant, end your message with a line containing exactly: [discount_voucher]
 - Do not promise items that are not in the menu context.`;

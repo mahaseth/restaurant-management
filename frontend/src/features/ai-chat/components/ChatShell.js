@@ -123,8 +123,11 @@ export default function ChatShell({
   setMessageInput,
   onSend,
   sending,
-  endChatLabel,
-  onEndChat,
+  onStartNewConversation = null,
+  showStartNewConversation = false,
+  startNewConversationDisabled = false,
+  startNewConversationLoading = false,
+  startNewConversationTitle = null,
   messagesContainerRef,
   discountBanner,
   embedded = false,
@@ -134,6 +137,10 @@ export default function ChatShell({
   onAddRecommendationToCart = null,
   /** Disable typing/sending (e.g. AI off for this venue). */
   composerDisabled = false,
+  /** When set, table QR guest UI: brand in header; table + order status share the strip under the header. */
+  guestTableNumber = null,
+  /** Order status (e.g. pill) in the same strip as the table badge, below the guest header. */
+  guestOrderStatusPill = null,
 }) {
   const theme = useChatTheme();
   const p = theme.primaryColor || "#2563eb";
@@ -143,50 +150,122 @@ export default function ChatShell({
 
   /** GPTA-style: full viewport width, content column max-w-3xl — not a narrow phone card. */
   if (!embedded) {
+    const displayTitle = String((theme.brandName || agentName || "").trim() || agentName || "Assistant");
+    const guestPill = guestTableNumber != null;
     return (
       <div className="relative z-10 flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden font-sans antialiased leading-relaxed">
         <header
-          className="shrink-0 border-b border-black/10 backdrop-blur-md"
+          className={`shrink-0 border-b backdrop-blur-md ${guestPill ? "border-white/10" : "border-black/10"}`}
           style={{
-            paddingTop: "max(0.2rem, env(safe-area-inset-top))",
+            paddingTop: "max(0.3rem, env(safe-area-inset-top))",
             background: theme.headerBg || "rgba(255,255,255,0.92)",
             color: theme.headerText || "#0f172a",
           }}
         >
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-1.5 sm:gap-3 sm:px-4 sm:py-2.5">
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5">
+          <div
+            className={`mx-auto flex max-w-3xl min-w-0 items-center justify-between gap-2 px-3 sm:px-4 ${guestPill ? "min-h-[3.25rem] py-2.5 sm:min-h-[3.5rem] sm:py-3" : "py-2 sm:py-2.5"}`}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt=""
-                  className="h-8 w-8 shrink-0 rounded-xl object-cover shadow ring-1 ring-white/80 sm:h-9 sm:w-9 sm:rounded-2xl sm:shadow-md sm:ring-2"
+                  className="h-10 w-10 shrink-0 rounded-2xl object-cover shadow ring-1 ring-white/30 sm:h-12 sm:w-12 sm:rounded-2xl sm:shadow-md sm:ring-2"
                 />
               ) : (
                 <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow ring-1 ring-white/80 sm:h-9 sm:w-9 sm:rounded-2xl sm:shadow-md sm:ring-2"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow ring-1 ring-white/30 sm:h-12 sm:w-12 sm:rounded-2xl sm:shadow-md sm:ring-2"
                   style={{ background: `linear-gradient(145deg, ${p} 0%, ${hexAlpha(p, 0.75)} 100%)` }}
                 >
-                  <i className="pi pi-comments text-sm text-white sm:text-base" />
+                  <i className="pi pi-comments text-base text-white sm:text-lg" />
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold tracking-tight sm:text-base">{agentName}</p>
-                {theme.brandTagline ? (
-                  <p className="mt-0 hidden min-[400px]:block truncate text-[10px] leading-tight text-slate-500 sm:mt-0.5 sm:text-xs">
-                    {theme.brandTagline}
-                  </p>
-                ) : null}
+              <div className="min-w-0 flex-1">
+                {guestPill ? (
+                  <div className="flex min-w-0 flex-col gap-0.5 sm:gap-1.5">
+                    <p
+                      className="min-w-0 truncate text-base font-semibold leading-tight tracking-tight sm:text-lg"
+                      style={{ color: theme.headerText || "#0f172a" }}
+                    >
+                      {displayTitle}
+                    </p>
+                    {theme.brandTagline ? (
+                      <p
+                        className="line-clamp-1 truncate text-[10px] leading-snug sm:text-xs"
+                        style={{ color: theme.headerText || "#0f172a", opacity: 0.88 }}
+                      >
+                        {theme.brandTagline}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold tracking-tight sm:text-base">{agentName}</p>
+                    {theme.brandTagline ? (
+                      <p className="mt-0 hidden min-[400px]:block truncate text-[10px] leading-tight text-slate-500 sm:mt-0.5 sm:text-xs">
+                        {theme.brandTagline}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </div>
-            <button
-              type="button"
-              className="shrink-0 rounded-lg border border-slate-200/90 bg-white/80 px-2 py-1 text-[10px] font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white min-[400px]:px-2.5 min-[400px]:py-1.5 min-[400px]:text-xs sm:rounded-xl sm:px-3.5 sm:py-2 sm:text-sm"
-              onClick={onEndChat}
-            >
-              {endChatLabel || "End Chat"}
-            </button>
+            {typeof onStartNewConversation === "function" && showStartNewConversation ? (
+              <div className="flex min-w-0 max-w-[46%] shrink-0 items-center justify-end sm:max-w-[42%]">
+                <button
+                  type="button"
+                  onClick={onStartNewConversation}
+                  disabled={startNewConversationDisabled || startNewConversationLoading}
+                  title={startNewConversationTitle || "Clear the thread and start fresh"}
+                  className="inline-flex min-h-9 min-w-0 max-w-full shrink-0 items-center justify-center gap-0.5 rounded-full border-2 border-white/90 bg-white/95 px-1.5 py-1.5 text-[8px] font-semibold leading-tight shadow-md ring-1 ring-black/5 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 min-[400px]:min-h-10 min-[400px]:gap-1.5 min-[400px]:px-2.5 min-[400px]:py-2 min-[400px]:text-xs"
+                  style={{ color: p }}
+                >
+                  <i
+                    className={`shrink-0 text-[8px] min-[400px]:text-xs ${
+                      startNewConversationLoading ? "pi pi-spin pi-spinner" : "pi pi-refresh"
+                    }`}
+                  />
+                  <span className="min-w-0 truncate text-left">
+                    <span className="min-[400px]:hidden">New</span>
+                    <span className="hidden min-[400px]:inline min-[500px]:hidden">Start new</span>
+                    <span className="hidden min-[500px]:inline">Start new conversation</span>
+                  </span>
+                </button>
+              </div>
+            ) : null}
           </div>
         </header>
+        {guestPill ? (
+          <div className="shrink-0 border-b border-white/5 bg-slate-950/15 backdrop-blur-sm">
+            <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-2.5 gap-y-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
+              <div
+                className="inline-flex shrink-0 select-none items-center gap-1.5 rounded-full border border-slate-200/60 bg-white px-2.5 py-1.5 pl-2 shadow-sm ring-1 ring-black/5 sm:px-3 sm:py-2"
+                title="Your table"
+                aria-label={
+                  !guestTableNumber || guestTableNumber === "—"
+                    ? "Table number not on file for this table"
+                    : `Table ${guestTableNumber}`
+                }
+              >
+                <span className="text-[0.65rem] font-extrabold uppercase leading-none tracking-[0.1em] text-slate-600 sm:text-xs sm:tracking-[0.12em]">
+                  Table
+                </span>
+                <span
+                  className="min-w-[1.15rem] text-center text-base font-black tabular-nums leading-none sm:min-w-6 sm:text-lg"
+                  style={{ color: p }}
+                >
+                  {!guestTableNumber || guestTableNumber === "—" ? "?" : String(guestTableNumber)}
+                </span>
+              </div>
+              {guestOrderStatusPill ? (
+                <>
+                  <div className="hidden h-4 w-px shrink-0 self-center bg-white/20 sm:block" aria-hidden />
+                  {guestOrderStatusPill}
+                </>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {discountBanner ? (
           <div
@@ -331,13 +410,25 @@ export default function ChatShell({
               )}
             </div>
           </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-xl border border-slate-200/90 bg-white/60 px-2.5 py-1.5 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white"
-            onClick={onEndChat}
-          >
-            {endChatLabel || "End Chat"}
-          </button>
+          {typeof onStartNewConversation === "function" && showStartNewConversation ? (
+            <div className="flex shrink-0 items-center justify-end">
+              <button
+                type="button"
+                onClick={onStartNewConversation}
+                disabled={startNewConversationDisabled || startNewConversationLoading}
+                title={startNewConversationTitle || "Clear the thread and start fresh"}
+                className="inline-flex max-w-[min(14rem,50vw)] items-center justify-center gap-1.5 rounded-full border-2 border-white/90 bg-white px-2.5 py-1.5 text-[12px] font-semibold leading-tight shadow-md ring-1 ring-black/5 transition hover:bg-white/95 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ color: p }}
+              >
+                <i
+                  className={`shrink-0 text-xs ${
+                    startNewConversationLoading ? "pi pi-spin pi-spinner" : "pi pi-refresh"
+                  }`}
+                />
+                <span className="min-w-0 truncate">Start new conversation</span>
+              </button>
+            </div>
+          ) : null}
         </header>
 
         {discountBanner && (
