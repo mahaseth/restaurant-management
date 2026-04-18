@@ -165,6 +165,7 @@ export default function UnifiedTableSessionPage() {
   const lastTableChatRevRef = useRef(-1);
   const lastPendingKeyRef = useRef(null);
   const lastClearedKeyRef = useRef(null);
+  const chatRenewalZeroRefreshRef = useRef(null);
 
   const thinkingMessages = useMemo(
     () => getThinkingMessagesForStyle(theme.thinkingTextStyle).map((text) => ({ text })),
@@ -604,6 +605,20 @@ export default function UnifiedTableSessionPage() {
   }, [sessionSnapshot?.pendingChatResetAt, chatRenewalTick]);
 
   useEffect(() => {
+    if (!sessionSnapshot?.pendingChatResetAt) {
+      chatRenewalZeroRefreshRef.current = null;
+    }
+  }, [sessionSnapshot?.pendingChatResetAt]);
+
+  useEffect(() => {
+    const p = sessionSnapshot?.pendingChatResetAt;
+    if (!sessionToken || !p || chatRenewalMsLeft > 0) return;
+    if (chatRenewalZeroRefreshRef.current === p) return;
+    chatRenewalZeroRefreshRef.current = p;
+    void refreshSession();
+  }, [sessionToken, sessionSnapshot?.pendingChatResetAt, chatRenewalMsLeft, refreshSession]);
+
+  useEffect(() => {
     const p = normalizeOrderPhase(sessionSnapshot?.orderGuestPhase);
     if (p === "placed" || p === "preparing" || p === "ready") {
       setOrderStatusAfterFreshChat(false);
@@ -809,7 +824,9 @@ export default function UnifiedTableSessionPage() {
                   startNewConversationTitle={
                     orderBlocksNewChat
                       ? "New chat is available when your current order is finished (placed, preparing, or ready)"
-                      : "Clear the thread and start fresh"
+                      : sessionSnapshot?.pendingChatResetAt
+                        ? "Start a fresh chat now, or wait for the automatic reset in about a minute"
+                        : "Clear the thread and start fresh"
                   }
                   messagesContainerRef={messagesContainerRef}
                   discountBanner={isDiscountEnabled(theme) ? theme.voucherBannerLabel : null}
@@ -829,10 +846,18 @@ export default function UnifiedTableSessionPage() {
           onHide={() => setCartOpen(false)}
           showCloseIcon={false}
           blockScroll
-          // PrimeReact’s right sidebar mask uses align-items:center, which leaves a bar above the panel. Stretch + full height.
-          className="w-full max-w-md p-0 shadow-2xl shadow-slate-950/35 [&_.p-sidebar]:flex [&_.p-sidebar]:h-full [&_.p-sidebar]:!min-h-[100dvh] [&_.p-sidebar]:min-h-0 [&_.p-sidebar]:!max-h-none [&_.p-sidebar]:!max-w-full [&_.p-sidebar]:flex-col [&_.p-sidebar]:!self-stretch [&_.p-sidebar]:!overflow-hidden [&_.p-sidebar]:!rounded-3xl [&_.p-sidebar]:!border-0 [&_.p-sidebar]:!ring-0 [&_.p-sidebar]:!bg-slate-100 [&_.p-sidebar-header]:hidden [&_.p-sidebar-content]:!min-h-0 [&_.p-sidebar-content]:!flex-1 [&_.p-sidebar-content]:!p-0 [&_.p-sidebar-content]:!m-0 [&_.p-sidebar-content]:flex [&_.p-sidebar-content]:!flex-col"
-          maskClassName="!items-stretch !bg-slate-950/50 !backdrop-blur-sm"
-          pt={{ mask: { className: "!items-stretch", style: { alignItems: "stretch" } } }}
+          // PrimeReact 10 applies inline mask style alignItems:center for position=right, which *cannot* be
+          // overridden with Tailwind alone — that leaves a white strip above the panel. maskStyle runs last.
+          maskStyle={{
+            alignItems: "stretch",
+            minHeight: "100dvh",
+            height: "100dvh",
+            backgroundColor: "rgb(2 6 23 / 0.5)", // slate-950/50, matches dim overlay
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+          }}
+          className="w-full max-w-md p-0 shadow-2xl shadow-slate-950/35 [&_.p-sidebar]:flex [&_.p-sidebar]:h-full [&_.p-sidebar]:!min-h-[100dvh] [&_.p-sidebar]:!max-h-[100dvh] [&_.p-sidebar]:!max-w-full [&_.p-sidebar]:min-h-0 [&_.p-sidebar]:!max-h-none [&_.p-sidebar]:flex-col [&_.p-sidebar]:!self-stretch [&_.p-sidebar]:!shrink-0 [&_.p-sidebar]:!overflow-hidden [&_.p-sidebar]:!rounded-3xl [&_.p-sidebar]:!border-0 [&_.p-sidebar]:!ring-0 [&_.p-sidebar]:!bg-slate-100 [&_.p-sidebar]:!p-0 [&_.p-sidebar-header]:hidden [&_.p-sidebar-content]:!min-h-0 [&_.p-sidebar-content]:!h-full [&_.p-sidebar-content]:!max-h-full [&_.p-sidebar-content]:!flex-1 [&_.p-sidebar-content]:!p-0 [&_.p-sidebar-content]:!m-0 [&_.p-sidebar-content]:flex [&_.p-sidebar-content]:!flex-col"
+          maskClassName="!items-stretch !bg-transparent !backdrop-blur-sm"
         >
           <div
             className="flex h-full min-h-[100dvh] flex-1 flex-col"

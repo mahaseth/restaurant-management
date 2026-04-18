@@ -57,6 +57,9 @@ export async function synchronizeTableChatRenewal(sessionToken) {
         lastChatClearedForOrder: pendingFor,
         pendingChatResetAt: null,
         pendingChatResetForOrder: null,
+        /** Guest is on a clean slate for the next order; do not keep the previous order on the session. */
+        activeOrderId: null,
+        lastOrderStatus: "",
         lastActivityAt: new Date(),
       },
     });

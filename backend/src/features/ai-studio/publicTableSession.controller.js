@@ -214,6 +214,7 @@ export async function postResetConversation(req, res) {
       return res.status(400).json({ success: false, error: "No saved conversation to clear." });
     }
     await tableChatSessionRepo.resetGuestTableConversation(session._id);
+    await tableChatSessionRepo.clearActiveOrder(session._id);
     const fresh = await tableChatSessionRepo.findSessionByToken(req.params.sessionToken);
     res.json({
       success: true,
