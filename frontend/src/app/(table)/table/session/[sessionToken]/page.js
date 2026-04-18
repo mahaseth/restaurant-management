@@ -829,11 +829,13 @@ export default function UnifiedTableSessionPage() {
           onHide={() => setCartOpen(false)}
           showCloseIcon={false}
           blockScroll
-          className="w-full max-w-md p-0 shadow-2xl shadow-slate-950/35 [&_.p-sidebar]:flex [&_.p-sidebar]:h-full [&_.p-sidebar]:min-h-0 [&_.p-sidebar]:!max-h-full [&_.p-sidebar]:flex-col [&_.p-sidebar]:!overflow-hidden [&_.p-sidebar]:!rounded-3xl [&_.p-sidebar]:!border-0 [&_.p-sidebar]:!ring-0 [&_.p-sidebar-header]:hidden [&_.p-sidebar-content]:!flex-1 [&_.p-sidebar-content]:!min-h-0 [&_.p-sidebar-content]:!p-0 [&_.p-sidebar-content]:!m-0 [&_.p-sidebar-content]:flex [&_.p-sidebar-content]:!flex-col"
-          maskClassName="!bg-slate-950/50 !backdrop-blur-sm"
+          // PrimeReact’s right sidebar mask uses align-items:center, which leaves a bar above the panel. Stretch + full height.
+          className="w-full max-w-md p-0 shadow-2xl shadow-slate-950/35 [&_.p-sidebar]:flex [&_.p-sidebar]:h-full [&_.p-sidebar]:!min-h-[100dvh] [&_.p-sidebar]:min-h-0 [&_.p-sidebar]:!max-h-none [&_.p-sidebar]:!max-w-full [&_.p-sidebar]:flex-col [&_.p-sidebar]:!self-stretch [&_.p-sidebar]:!overflow-hidden [&_.p-sidebar]:!rounded-3xl [&_.p-sidebar]:!border-0 [&_.p-sidebar]:!ring-0 [&_.p-sidebar]:!bg-slate-100 [&_.p-sidebar-header]:hidden [&_.p-sidebar-content]:!min-h-0 [&_.p-sidebar-content]:!flex-1 [&_.p-sidebar-content]:!p-0 [&_.p-sidebar-content]:!m-0 [&_.p-sidebar-content]:flex [&_.p-sidebar-content]:!flex-col"
+          maskClassName="!items-stretch !bg-slate-950/50 !backdrop-blur-sm"
+          pt={{ mask: { className: "!items-stretch", style: { alignItems: "stretch" } } }}
         >
           <div
-            className="flex h-full min-h-0 flex-1 flex-col"
+            className="flex h-full min-h-[100dvh] flex-1 flex-col"
             style={{
               background: `linear-gradient(180deg, ${hexAlpha(brandPrimary, 0.1)} 0%, #f8fafc 26%, #e2e8f0 100%)`,
             }}
@@ -843,9 +845,10 @@ export default function UnifiedTableSessionPage() {
               style={{
                 background: `linear-gradient(145deg, ${brandPrimary} 0%, ${hexAlpha(brandPrimary, 0.7)} 100%)`,
                 boxShadow: `0 10px 32px -12px ${hexAlpha(brandPrimary, 0.55)}`,
+                paddingTop: "max(0.4rem, env(safe-area-inset-top, 0px))",
               }}
             >
-              <div className="flex items-start justify-between gap-3 px-4 pt-3.5 sm:pt-4">
+              <div className="flex items-start justify-between gap-3 px-4 pt-1 sm:pt-1.5">
                 <div className="min-w-0">
                   <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-white/80">Order & menu</p>
                   <p

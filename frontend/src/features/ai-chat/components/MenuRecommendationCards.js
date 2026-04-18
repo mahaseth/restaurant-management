@@ -14,8 +14,15 @@ function displayImageSrc(url) {
   return s;
 }
 
+const cardBase =
+  "flex min-w-0 flex-col overflow-hidden rounded-2xl border border-black/8 bg-white/95 shadow-md ring-1 dark:border-white/10 dark:bg-slate-900/95";
+
+const cardRingEmbed = "ring-black/[0.04]";
+const cardRingDefault = "ring-black/[0.06]";
+
 /**
- * Dish recommendation strip (GPTA-style): thumbnail, name, price, tap to expand image.
+ * Dish recommendations: large image on top (full card width), details + actions below.
+ * Tapping the photo opens the lightbox (expand icon is the only extra affordance; no duplicate text link).
  */
 export default function MenuRecommendationCards({ items, theme, embedded = false, onAddToCart = null }) {
   const [expandedUrl, setExpandedUrl] = useState(null);
@@ -49,67 +56,64 @@ export default function MenuRecommendationCards({ items, theme, embedded = false
         {items.map((it) => {
           const src = displayImageSrc(it.imageUrl);
           return (
-          <article
-            key={`${it.menuItemId || it.name}-${it.name}`}
-            className={
-              embedded
-                ? "flex min-w-[min(260px,88vw)] max-w-[280px] shrink-0 overflow-hidden rounded-2xl border border-black/8 bg-white/95 shadow-md ring-1 ring-black/[0.04] dark:border-white/10 dark:bg-slate-900/95"
-                : "flex min-w-0 overflow-hidden rounded-2xl border border-black/8 bg-white/95 shadow-md ring-1 ring-black/[0.06] dark:border-white/10 dark:bg-slate-900/95"
-            }
-            style={{ boxShadow: `0 8px 28px -12px ${hexAlpha(p, 0.22)}` }}
-          >
-            {src ? (
-              <button
-                type="button"
-                className="group relative h-[5.25rem] w-[5.25rem] shrink-0 overflow-hidden sm:h-[6rem] sm:w-[6rem]"
-                onClick={() => openImage(src)}
-                onPointerUp={() => openImage(src)}
-                aria-label={`View ${it.name} full size`}
-              >
-                <img src={src} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
-                <span className="pointer-events-none absolute bottom-1.5 right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white shadow-md backdrop-blur-sm transition-colors group-hover:bg-black/55">
-                  <i className="pi pi-expand text-sm" />
-                </span>
-              </button>
-            ) : (
-              <div
-                className="flex h-[5.25rem] w-[5.25rem] shrink-0 items-center justify-center bg-slate-100 dark:bg-slate-800 sm:h-[6rem] sm:w-[6rem]"
-                aria-hidden
-              >
-                <i className="pi pi-image text-2xl text-slate-300 dark:text-slate-600" />
-              </div>
-            )}
-            <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-3 py-2.5">
-              <p className="truncate text-[15px] font-semibold leading-tight text-slate-900 dark:text-slate-100">{it.name}</p>
-              {it.price != null && it.price !== "" ? (
-                <p className="text-sm font-medium tabular-nums" style={{ color: p }}>
-                  {formatMoney(it.price)}
-                </p>
-              ) : null}
+            <article
+              key={`${it.menuItemId || it.name}-${it.name}`}
+              className={
+                embedded
+                  ? `${cardBase} min-w-[min(280px,88vw)] max-w-[300px] shrink-0 ${cardRingEmbed}`
+                  : `${cardBase} ${cardRingDefault}`
+              }
+              style={{ boxShadow: `0 8px 28px -12px ${hexAlpha(p, 0.22)}` }}
+            >
               {src ? (
                 <button
                   type="button"
-                  className="mt-1 w-fit rounded-full border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  className="group relative aspect-[4/3] w-full shrink-0 overflow-hidden"
                   onClick={() => openImage(src)}
                   onPointerUp={() => openImage(src)}
+                  aria-label={`View ${it.name} full size`}
                 >
-                  Expand image
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-full w-full bg-slate-200 object-cover object-center dark:bg-slate-800"
+                    loading="lazy"
+                  />
+                  <span className="pointer-events-none absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/45 text-white shadow-md ring-1 ring-white/20 backdrop-blur-sm transition-colors group-hover:bg-black/55">
+                    <i className="pi pi-expand text-sm" />
+                  </span>
                 </button>
               ) : (
-                <span className="mt-1 text-xs text-slate-400">No image available</span>
-              )}
-              {typeof onAddToCart === "function" && it.menuItemId ? (
-                <button
-                  type="button"
-                  className="mt-2 w-full rounded-xl px-3 py-2 text-xs font-bold text-white shadow-md transition active:scale-[0.98]"
-                  style={{ background: p }}
-                  onClick={() => onAddToCart(it)}
+                <div
+                  className="flex aspect-[4/3] w-full shrink-0 items-center justify-center bg-slate-100 dark:bg-slate-800"
+                  aria-hidden
                 >
-                  Add to cart
-                </button>
-              ) : null}
-            </div>
-          </article>
+                  <i className="pi pi-image text-3xl text-slate-300 dark:text-slate-600" />
+                </div>
+              )}
+
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 px-3.5 py-3">
+                <p className="line-clamp-2 text-[15px] font-semibold leading-tight text-slate-900 dark:text-slate-100">
+                  {it.name}
+                </p>
+                {it.price != null && it.price !== "" ? (
+                  <p className="text-sm font-medium tabular-nums" style={{ color: p }}>
+                    {formatMoney(it.price)}
+                  </p>
+                ) : null}
+                {!src ? <span className="text-xs text-slate-400">No image available</span> : null}
+                {typeof onAddToCart === "function" && it.menuItemId ? (
+                  <button
+                    type="button"
+                    className="mt-2 w-full rounded-xl px-3 py-2.5 text-sm font-bold text-white shadow-md transition active:scale-[0.98]"
+                    style={{ background: p }}
+                    onClick={() => onAddToCart(it)}
+                  >
+                    Add to cart
+                  </button>
+                ) : null}
+              </div>
+            </article>
           );
         })}
       </div>
