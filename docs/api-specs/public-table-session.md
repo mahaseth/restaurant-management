@@ -93,7 +93,7 @@ These endpoints power the **unified table experience**: AI menu chat (when the r
 
 **Errors:** `400` empty/too long message, `403` AI not enabled, `500` model/infra failure.
 
-**Menu RAG (retrieval):** Dish suggestions are grounded in vector search over menu catalog rows (Supabase/pgvector) when configured. Optional env tuning: see `backend/.env.example` (`MENU_RAG_*`, `MENU_RAG_DEBUG`). Canned safe replies are used when retrieval confidence is **none**, or **low** only if the guest **self-reports** an allergy/intolerance in the message text.
+**Menu RAG (retrieval):** Dish suggestions are grounded in vector search over menu catalog rows (Supabase/pgvector) when configured. Optional: `MENU_RAG_DEBUG=1` for per-turn logs. The guest reply model always runs; `topSimilarity` in logs is informational (no similarity-based routing or canned-only path).
 
 ---
 

@@ -82,3 +82,33 @@ export async function clearActiveOrder(sessionId) {
     },
   });
 }
+
+export async function countMessages(sessionId) {
+  const d = await TableChatSession.findById(sessionId).select("messages").lean();
+  return d?.messages?.length ?? 0;
+}
+
+/**
+ * Wipes chat and bumps tableChatRevision so the guest app drops stale UI state.
+ */
+export async function clearAllMessagesAndBumpRevision(sessionId) {
+  await TableChatSession.findByIdAndUpdate(sessionId, {
+    $set: { messages: [], lastActivityAt: new Date() },
+    $inc: { tableChatRevision: 1 },
+  });
+}
+
+/**
+ * Guest-initiated "new conversation": clear thread and cancel a pending auto-reset timer.
+ */
+export async function resetGuestTableConversation(sessionId) {
+  await TableChatSession.findByIdAndUpdate(sessionId, {
+    $set: {
+      messages: [],
+      pendingChatResetAt: null,
+      pendingChatResetForOrder: null,
+      lastActivityAt: new Date(),
+    },
+    $inc: { tableChatRevision: 1 },
+  });
+}

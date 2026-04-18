@@ -14,6 +14,8 @@ const config = {
     },
   },
   mongodbUrl: process.env.MONGODB_URL || "",
+  /** Comma-separated host:port seeds (e.g. Atlas shard hosts). If set with mongodb+srv, we connect via mongodb:// seeds to avoid Node SRV/querySrv issues on some Windows setups. */
+  mongodbAtlasSeeds: (process.env.MONGODB_ATLAS_SEEDS || "").trim(),
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
     apiKey: process.env.CLOUDINARY_API_KEY || "",

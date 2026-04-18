@@ -123,8 +123,11 @@ export default function ChatShell({
   setMessageInput,
   onSend,
   sending,
-  endChatLabel,
-  onEndChat,
+  onStartNewConversation = null,
+  showStartNewConversation = false,
+  startNewConversationDisabled = false,
+  startNewConversationLoading = false,
+  startNewConversationTitle = null,
   messagesContainerRef,
   discountBanner,
   embedded = false,
@@ -134,6 +137,10 @@ export default function ChatShell({
   onAddRecommendationToCart = null,
   /** Disable typing/sending (e.g. AI off for this venue). */
   composerDisabled = false,
+  /** When set, table QR guest UI: brand in header; table + order status share the strip under the header. */
+  guestTableNumber = null,
+  /** Order status (e.g. pill) in the same strip as the table badge, below the guest header. */
+  guestOrderStatusPill = null,
 }) {
   const theme = useChatTheme();
   const p = theme.primaryColor || "#2563eb";
@@ -143,54 +150,132 @@ export default function ChatShell({
 
   /** GPTA-style: full viewport width, content column max-w-3xl — not a narrow phone card. */
   if (!embedded) {
+    const displayTitle = String((theme.brandName || agentName || "").trim() || agentName || "Assistant");
+    const guestPill = guestTableNumber != null;
     return (
       <div className="relative z-10 flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden font-sans antialiased leading-relaxed">
         <header
-          className="shrink-0 border-b border-black/10 backdrop-blur-md"
+          className={`shrink-0 border-b backdrop-blur-md ${guestPill ? "border-white/10" : "border-black/10"}`}
           style={{
-            paddingTop: "max(0.5rem, env(safe-area-inset-top))",
+            paddingTop: "max(0.3rem, env(safe-area-inset-top))",
             background: theme.headerBg || "rgba(255,255,255,0.92)",
             color: theme.headerText || "#0f172a",
           }}
         >
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-5">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div
+            className={`mx-auto flex max-w-3xl min-w-0 items-center justify-between gap-2 px-3 sm:px-4 ${guestPill ? "min-h-[3.25rem] py-2.5 sm:min-h-[3.5rem] sm:py-3" : "py-2 sm:py-2.5"}`}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-11 w-11 shrink-0 rounded-2xl object-cover shadow-md ring-2 ring-white sm:h-12 sm:w-12" />
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-2xl object-cover shadow ring-1 ring-white/30 sm:h-12 sm:w-12 sm:rounded-2xl sm:shadow-md sm:ring-2"
+                />
               ) : (
                 <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-md ring-2 ring-white sm:h-12 sm:w-12"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow ring-1 ring-white/30 sm:h-12 sm:w-12 sm:rounded-2xl sm:shadow-md sm:ring-2"
                   style={{ background: `linear-gradient(145deg, ${p} 0%, ${hexAlpha(p, 0.75)} 100%)` }}
                 >
-                  <i className="pi pi-comments text-lg text-white" />
+                  <i className="pi pi-comments text-base text-white sm:text-lg" />
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold tracking-tight sm:text-lg">{agentName}</p>
-                {theme.brandTagline ? (
-                  <p className="mt-0.5 truncate text-xs text-slate-500">{theme.brandTagline}</p>
-                ) : null}
+              <div className="min-w-0 flex-1">
+                {guestPill ? (
+                  <div className="flex min-w-0 flex-col gap-0.5 sm:gap-1.5">
+                    <p
+                      className="min-w-0 truncate text-base font-semibold leading-tight tracking-tight sm:text-lg"
+                      style={{ color: theme.headerText || "#0f172a" }}
+                    >
+                      {displayTitle}
+                    </p>
+                    {theme.brandTagline ? (
+                      <p
+                        className="line-clamp-1 truncate text-[10px] leading-snug sm:text-xs"
+                        style={{ color: theme.headerText || "#0f172a", opacity: 0.88 }}
+                      >
+                        {theme.brandTagline}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold tracking-tight sm:text-base">{agentName}</p>
+                    {theme.brandTagline ? (
+                      <p className="mt-0 hidden min-[400px]:block truncate text-[10px] leading-tight text-slate-500 sm:mt-0.5 sm:text-xs">
+                        {theme.brandTagline}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </div>
-            <button
-              type="button"
-              className="shrink-0 rounded-xl border border-slate-200/90 bg-white/80 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white sm:text-sm"
-              onClick={onEndChat}
-            >
-              {endChatLabel || "End Chat"}
-            </button>
+            {typeof onStartNewConversation === "function" && showStartNewConversation ? (
+              <div className="flex min-w-0 max-w-[46%] shrink-0 items-center justify-end sm:max-w-[42%]">
+                <button
+                  type="button"
+                  onClick={onStartNewConversation}
+                  disabled={startNewConversationDisabled || startNewConversationLoading}
+                  title={startNewConversationTitle || "Clear the thread and start fresh"}
+                  className="inline-flex min-h-9 min-w-0 max-w-full shrink-0 items-center justify-center gap-0.5 rounded-full border-2 border-white/90 bg-white/95 px-1.5 py-1.5 text-[8px] font-semibold leading-tight shadow-md ring-1 ring-black/5 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 min-[400px]:min-h-10 min-[400px]:gap-1.5 min-[400px]:px-2.5 min-[400px]:py-2 min-[400px]:text-xs"
+                  style={{ color: p }}
+                >
+                  <i
+                    className={`shrink-0 text-[8px] min-[400px]:text-xs ${
+                      startNewConversationLoading ? "pi pi-spin pi-spinner" : "pi pi-refresh"
+                    }`}
+                  />
+                  <span className="min-w-0 truncate text-left">
+                    <span className="min-[400px]:hidden">New</span>
+                    <span className="hidden min-[400px]:inline min-[500px]:hidden">Start new</span>
+                    <span className="hidden min-[500px]:inline">Start new conversation</span>
+                  </span>
+                </button>
+              </div>
+            ) : null}
           </div>
         </header>
+        {guestPill ? (
+          <div className="shrink-0 border-b border-white/5 bg-slate-950/15 backdrop-blur-sm">
+            <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-2.5 gap-y-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
+              <div
+                className="inline-flex shrink-0 select-none items-center gap-1.5 rounded-full border border-slate-200/60 bg-white px-2.5 py-1.5 pl-2 shadow-sm ring-1 ring-black/5 sm:px-3 sm:py-2"
+                title="Your table"
+                aria-label={
+                  !guestTableNumber || guestTableNumber === "—"
+                    ? "Table number not on file for this table"
+                    : `Table ${guestTableNumber}`
+                }
+              >
+                <span className="text-[0.65rem] font-extrabold uppercase leading-none tracking-[0.1em] text-slate-600 sm:text-xs sm:tracking-[0.12em]">
+                  Table
+                </span>
+                <span
+                  className="min-w-[1.15rem] text-center text-base font-black tabular-nums leading-none sm:min-w-6 sm:text-lg"
+                  style={{ color: p }}
+                >
+                  {!guestTableNumber || guestTableNumber === "—" ? "?" : String(guestTableNumber)}
+                </span>
+              </div>
+              {guestOrderStatusPill ? (
+                <>
+                  <div className="hidden h-4 w-px shrink-0 self-center bg-white/20 sm:block" aria-hidden />
+                  {guestOrderStatusPill}
+                </>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {discountBanner ? (
           <div
-            className="shrink-0 text-center text-xs font-semibold tracking-wide sm:text-sm"
+            className="shrink-0 text-center text-[10px] font-semibold tracking-wide sm:text-xs"
             style={{
               background: theme.voucherBannerBg || "#f59e0b",
               color: theme.voucherBannerText || "#fff",
             }}
           >
-            <div className="mx-auto max-w-3xl px-4 py-2.5">{discountBanner}</div>
+            <div className="mx-auto max-w-3xl px-3 py-1.5 sm:px-4 sm:py-2">{discountBanner}</div>
           </div>
         ) : null}
 
@@ -202,7 +287,7 @@ export default function ChatShell({
             background: "transparent",
           }}
         >
-          <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
+          <div className="mx-auto w-full max-w-3xl space-y-3 px-3 py-2 sm:space-y-4 sm:px-6 sm:py-4 md:space-y-5 md:py-5">
             {messages.map((m) => (
               <MessageBubble
                 key={m.messageId}
@@ -239,14 +324,14 @@ export default function ChatShell({
             boxShadow: "0 -12px 40px -20px rgba(15,23,42,0.08)",
           }}
         >
-          <div className="mx-auto max-w-3xl px-4 py-2.5 sm:px-5">
+          <div className="mx-auto max-w-3xl px-3 py-1.5 sm:px-5 sm:py-2.5">
             <div
-              className="flex items-end gap-2 rounded-2xl bg-slate-50/95 p-1.5 pl-3 ring-1 ring-slate-200/80 focus-within:ring-2 focus-within:ring-offset-0"
+              className="flex items-end gap-1.5 rounded-xl bg-slate-50/95 p-1 pl-2.5 ring-1 ring-slate-200/80 focus-within:ring-2 focus-within:ring-offset-0 sm:gap-2 sm:rounded-2xl sm:p-1.5 sm:pl-3"
               style={{ ["--chat-ring"]: hexAlpha(p, 0.38) }}
             >
               <textarea
                 rows={1}
-                className="min-h-[48px] max-h-[120px] min-w-0 flex-1 resize-none rounded-xl border-0 bg-transparent px-1 py-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 sm:text-base"
+                className="min-h-[40px] max-h-[120px] min-w-0 flex-1 resize-none rounded-lg border-0 bg-transparent px-0.5 py-2 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 sm:min-h-[48px] sm:rounded-xl sm:py-3 sm:text-base"
                 placeholder="Ask about the menu, prices, or diets…"
                 title="Ask about the menu, prices, or dietary options."
                 value={messageInput}
@@ -263,7 +348,7 @@ export default function ChatShell({
               <button
                 type="submit"
                 disabled={sending || composerDisabled || !messageInput.trim()}
-                className="flex min-h-[44px] min-w-[88px] shrink-0 items-center justify-center rounded-xl px-3 text-sm font-semibold text-white shadow-md transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-[96px]"
+                className="flex min-h-[38px] min-w-[44px] shrink-0 items-center justify-center rounded-lg px-2 text-sm font-semibold text-white shadow-md transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-[44px] sm:min-w-[96px] sm:rounded-xl sm:px-3"
                 style={{
                   background: `linear-gradient(180deg, ${hexAlpha(p, 1)} 0%, ${hexAlpha(p, 0.88)} 100%)`,
                   boxShadow: `0 4px 14px -4px ${hexAlpha(p, 0.55)}`,
@@ -325,13 +410,25 @@ export default function ChatShell({
               )}
             </div>
           </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-xl border border-slate-200/90 bg-white/60 px-2.5 py-1.5 text-[13px] font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white"
-            onClick={onEndChat}
-          >
-            {endChatLabel || "End Chat"}
-          </button>
+          {typeof onStartNewConversation === "function" && showStartNewConversation ? (
+            <div className="flex shrink-0 items-center justify-end">
+              <button
+                type="button"
+                onClick={onStartNewConversation}
+                disabled={startNewConversationDisabled || startNewConversationLoading}
+                title={startNewConversationTitle || "Clear the thread and start fresh"}
+                className="inline-flex max-w-[min(14rem,50vw)] items-center justify-center gap-1.5 rounded-full border-2 border-white/90 bg-white px-2.5 py-1.5 text-[12px] font-semibold leading-tight shadow-md ring-1 ring-black/5 transition hover:bg-white/95 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ color: p }}
+              >
+                <i
+                  className={`shrink-0 text-xs ${
+                    startNewConversationLoading ? "pi pi-spin pi-spinner" : "pi pi-refresh"
+                  }`}
+                />
+                <span className="min-w-0 truncate">Start new conversation</span>
+              </button>
+            </div>
+          ) : null}
         </header>
 
         {discountBanner && (

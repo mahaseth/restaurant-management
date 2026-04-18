@@ -4,7 +4,7 @@ import config from "./config/config.js";
 import { homeRouter } from "./routes/home.routes.js";
 import userRoute from "./routes/user.routes.js";
 import authRoute from "./routes/auth.routes.js";
-import connectDB from "./config/database.js";
+import connectDB, { startMongoReconnectLoop } from "./config/database.js";
 import auth from "./middlewares/auth.js";
 import logger from "./middlewares/logger.js";
 import roleBasedAuth from "./middlewares/roleBasedAuth.js";
@@ -24,8 +24,23 @@ import cors from "cors";
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
+const isProd = process.env.NODE_ENV === "production";
+
 try {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch {
+    if (isProd && process.env.ALLOW_START_WITHOUT_DB !== "true") {
+      console.error(
+        "Refusing to start without database in production. Set ALLOW_START_WITHOUT_DB=true to override."
+      );
+      process.exit(1);
+    }
+    console.warn(
+      "Starting API without MongoDB; DB routes will fail until connected. Retrying in the background."
+    );
+    startMongoReconnectLoop();
+  }
   connectCloudinary();
 
   // Stripe webhook must receive the raw body for signature verification.

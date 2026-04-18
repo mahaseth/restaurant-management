@@ -111,7 +111,7 @@ sequenceDiagram
   API->>M: Order + update session
 ```
 
-**RAG safety (high level):** Retrieval thresholds and optional canned replies are tuned so weak matches do not invent dishes; **self-reported allergy/intolerance** in the user text triggers stricter behavior. Details: `menuRagConfidence.util.js`, `backend/.env.example` (`MENU_RAG_*`).
+**RAG (high level):** Top menu neighbors are always passed to the main reply model; similarity scores are for logging, not gating. **Self-reported allergy** and **ingredient/diet** phrasing in the user text still tighten the system prompt (strict mode). Details: `menuRagConfidence.util.js`, `restaurantChat.service.js`, `backend/.env.example` (`MENU_RAG_DEBUG`).
 
 ---
 

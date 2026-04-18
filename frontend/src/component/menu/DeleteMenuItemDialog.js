@@ -6,6 +6,7 @@
 import React from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
+import { formatMoney } from "@/utils/formatMoney";
 
 // Category config for display
 const categoryDisplay = {
@@ -108,7 +109,7 @@ const DeleteMenuItemDialog = ({ visible, onHide, onConfirm, menuItem, deleting }
                 {menuItem.name}
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                ${menuItem.price?.toFixed(2)} &middot; {cat.label}
+                {formatMoney(menuItem.price)} &middot; {cat.label}
               </p>
             </div>
             {/* Red indicator — about to be deleted */}

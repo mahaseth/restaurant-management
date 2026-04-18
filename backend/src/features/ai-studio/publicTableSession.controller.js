@@ -11,6 +11,7 @@ import { getOrCreateSessionForQrToken } from "./services/tableChatSession.servic
 import * as tableChatSessionRepo from "../../repositories/tableChatSession.repository.js";
 import * as cartService from "./services/tableSessionCart.service.js";
 import * as orderService from "./services/tableSessionOrder.service.js";
+import { synchronizeTableChatRenewal } from "./services/tableSessionChatRenewal.service.js";
 
 function toPublicMessages(messages) {
   return (messages || []).map((m, index) => {
@@ -98,6 +99,7 @@ export async function getSessionState(req, res) {
       }
     }
 
+    const { publicRenewal } = await synchronizeTableChatRenewal(session.sessionToken);
     const liveSession =
       (await tableChatSessionRepo.findSessionByToken(session.sessionToken)) || session;
 
@@ -119,6 +121,9 @@ export async function getSessionState(req, res) {
         activeOrder: orderBits.activeOrder,
         orderGuestPhase: orderBits.guestPhase,
         lastOrderStatus: orderBits.lastOrderStatus,
+        pendingChatResetAt: publicRenewal.pendingChatResetAt,
+        tableChatRevision: publicRenewal.tableChatRevision,
+        chatJustCleared: publicRenewal.chatJustCleared,
       },
     });
   } catch (e) {
@@ -166,6 +171,7 @@ export async function getAgent(req, res) {
 
 export async function getConversation(req, res) {
   try {
+    await synchronizeTableChatRenewal(req.params.sessionToken);
     const ctx = await loadSessionWithAgent(req.params.sessionToken);
     if (!ctx) {
       return res.status(404).json({
@@ -174,16 +180,58 @@ export async function getConversation(req, res) {
       });
     }
 
-    const messages = await tableChatSessionRepo.listMessagesLean(ctx.session._id);
-    res.json({ success: true, data: { messages: toPublicMessages(messages) } });
+    const sessionFresh = (await tableChatSessionRepo.findSessionByToken(ctx.session.sessionToken)) || ctx.session;
+    const messages = await tableChatSessionRepo.listMessagesLean(sessionFresh._id);
+    res.json({
+      success: true,
+      data: {
+        messages: toPublicMessages(messages),
+        tableChatRevision: sessionFresh.tableChatRevision ?? 0,
+      },
+    });
   } catch (e) {
     console.error("[publicTableSession] getConversation", e);
     res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
+export async function postResetConversation(req, res) {
+  try {
+    await synchronizeTableChatRenewal(req.params.sessionToken);
+    const session = await loadSessionOnly(req.params.sessionToken);
+    if (!session) {
+      return res.status(404).json({ success: false, error: "Session not found." });
+    }
+    const blocking = await orderService.getBlockingActiveOrder(session);
+    if (blocking) {
+      return res.status(409).json({
+        success: false,
+        error: "You have an order in progress. Start a new chat when that order is finished.",
+      });
+    }
+    const n = await tableChatSessionRepo.countMessages(session._id);
+    if (n === 0) {
+      return res.status(400).json({ success: false, error: "No saved conversation to clear." });
+    }
+    await tableChatSessionRepo.resetGuestTableConversation(session._id);
+    await tableChatSessionRepo.clearActiveOrder(session._id);
+    const fresh = await tableChatSessionRepo.findSessionByToken(req.params.sessionToken);
+    res.json({
+      success: true,
+      data: {
+        tableChatRevision: fresh?.tableChatRevision ?? 0,
+        cleared: true,
+      },
+    });
+  } catch (e) {
+    console.error("[publicTableSession] postResetConversation", e);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
 export async function postChatMessage(req, res) {
   try {
+    await synchronizeTableChatRenewal(req.params.sessionToken);
     const { message } = req.body || {};
     if (message === undefined || message === null) {
       return res.status(400).json({ success: false, error: "message is required" });
@@ -324,12 +372,23 @@ export async function deleteCart(req, res) {
 
 export async function getOrderStatus(req, res) {
   try {
+    const { publicRenewal } = await synchronizeTableChatRenewal(req.params.sessionToken);
     const session = await loadSessionOnly(req.params.sessionToken);
     if (!session) {
       return res.status(404).json({ success: false, error: "Session not found." });
     }
     const bits = await orderService.getOrderStatusForSession(session);
-    res.json({ success: true, data: bits });
+    const tableDoc = await Table.findById(session.tableId).lean();
+    res.json({
+      success: true,
+      data: {
+        ...bits,
+        tableNumber: tableDoc?.tableNumber ?? null,
+        pendingChatResetAt: publicRenewal.pendingChatResetAt,
+        tableChatRevision: publicRenewal.tableChatRevision,
+        chatJustCleared: publicRenewal.chatJustCleared,
+      },
+    });
   } catch (e) {
     console.error("[publicTableSession] getOrderStatus", e);
     res.status(500).json({ success: false, error: "Server error" });

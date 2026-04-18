@@ -43,6 +43,7 @@ export function serializeOrderForGuest(order) {
     _id: String(order._id),
     orderNumber: order.orderNumber,
     status: order.status,
+    paymentStatus: order.paymentStatus,
     guestPhase: mapGuestOrderPhase(order.status),
     items: order.items || [],
     subtotal: order.subtotal,

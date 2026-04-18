@@ -12,13 +12,7 @@ import {
   isBroadMenuIntentUserMessage,
 } from "./menuRecommendations.util.js";
 import { applyRetrievalKeywordBoost } from "./menuRetrievalBoost.util.js";
-import {
-  detectMenuQueryIntent,
-  computeRetrievalConfidence,
-  shouldForceRetrievalFallback,
-  buildMatchedMenuItemsSummary,
-  buildFallbackAssistantText,
-} from "./menuRagConfidence.util.js";
+import { detectMenuQueryIntent, computeRetrievalConfidence, buildMatchedMenuItemsSummary } from "./menuRagConfidence.util.js";
 
 const TONE_GUIDANCE = {
   professional: "Use a polished, professional tone appropriate for hospitality.",
@@ -39,27 +33,31 @@ const RETRIEVAL_LIMIT = 5;
 /** Fetch extra neighbors from pgvector, then keyword-boost and trim to RETRIEVAL_LIMIT. */
 const RETRIEVAL_PREFETCH = 12;
 const FALLBACK_CARD_LIMIT = 6;
-const CLARIFIER_HISTORY_LIMIT = 8;
+/** Match table session history cap so clarifier sees the same thread as the reply model. */
+const CLARIFIER_MAX_PRIOR_MESSAGES = 80;
 const CLARIFIER_MAX_TOKENS = 80;
 
 /**
- * Clarify the user's latest message into a retrieval query using recent conversation.
+ * Clarify the user's latest message into a retrieval query using conversation history.
  * This is retrieval-only text (not shown to guest), used before embedding + vector similarity.
  */
 async function clarifyQueryForRetrieval({ openai, model, priorMessages, userText }) {
-  const recent = (priorMessages || []).slice(-CLARIFIER_HISTORY_LIMIT).map((m) => ({
-    role: m.role === "assistant" ? "assistant" : "user",
-    content: String(m.content || ""),
-  }));
+  const history = (priorMessages || [])
+    .slice(-CLARIFIER_MAX_PRIOR_MESSAGES)
+    .map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content || ""),
+    }));
   const messages = [
     {
       role: "system",
       content:
-        "Rewrite the latest guest message into one concise retrieval query for restaurant menu lookup. " +
-        "Use conversation context to resolve pronouns/ellipsis. Keep dish names, cuisine, dietary needs, and constraints. " +
+        "You receive the prior conversation between the guest and the assistant (in order), then the guest's latest message as the final user turn. " +
+        "Rewrite only that latest guest message into one concise retrieval query for restaurant menu lookup. " +
+        "Use the full transcript to resolve pronouns, references, and ellipsis. Keep dish names, cuisine, dietary needs, and constraints. " +
         "No markdown, no bullets, no explanations. Output exactly one plain-text line.",
     },
-    ...recent,
+    ...history,
     { role: "user", content: userText },
   ];
   try {
@@ -77,7 +75,7 @@ async function clarifyQueryForRetrieval({ openai, model, priorMessages, userText
 }
 
 function buildSystemPrompt(agent, restaurantName, contextBlock, promptOptions = {}) {
-  const { weakRetrievalGuidance = false, strictIntentFocus = false } = promptOptions;
+  const { strictIntentFocus = false } = promptOptions;
   const theme = mergeChatTheme(agent.chatTheme || {});
   const discountOn = Boolean(theme.discountEnabled);
   const pct = theme.discountPercent || "5%";
@@ -87,16 +85,56 @@ function buildSystemPrompt(agent, restaurantName, contextBlock, promptOptions = 
   const toneLine = TONE_GUIDANCE[toneKey] || `Adopt a ${agent.agentTone || "friendly"} tone suitable for a restaurant guest.`;
   const lengthLine = LENGTH_GUIDANCE[rs] || LENGTH_GUIDANCE.default;
 
-  let prompt = `You are a restaurant assistant for "${restaurantName}". You speak on behalf of the restaurant team.
+  const displayName = typeof agent.agentDisplayName === "string" ? agent.agentDisplayName.trim() : "";
+  let displayNameSection = "";
+  if (displayName) {
+    displayNameSection = agent.omitAgentName
+      ? `\nIDENTITY: The label "${displayName}" in the chat is this assistant's name, not the restaurant or brand. The business you represent is "${restaurantName}". Do not use "${displayName}" as the venue, company, or product brand. Do not refer to yourself by name in replies (as configured).\n`
+      : `\nIDENTITY: "${displayName}" is the chat assistant's own name (your persona in this app), not the restaurant. The business you speak for is "${restaurantName}". If these differ, never use "${displayName}" as the shop, brand, or company name. Use "we/our" for the venue "${restaurantName}"; use "${displayName}" only as yourself when a short "I" fit is natural — not as a business or trademark.\n`;
+  }
 
-GROUNDING (required):
-- Treat the MENU CONTEXT block as the only source of truth for specific dishes, prices, availability, ingredients, allergens, dietary tags, spice level, and cuisine type.
+  const story = typeof agent.brandStory === "string" ? agent.brandStory.trim() : "";
+  const extra = typeof agent.customInstructions === "string" ? agent.customInstructions.trim() : "";
+
+  let prompt = `You are a restaurant assistant for "${restaurantName}". You speak on behalf of the restaurant team.${displayNameSection}
+
+CONFIGURED SETTINGS (AI Studio — follow on every reply):
+- Tone, response length, brand story, and operator rules below are set by the venue. Apply them together with the technical policies that follow.
+- Where brand or operator guidance conflicts with generic phrasing elsewhere in this prompt, prefer the owner's brand story and operator rules — except for allergen/dietary safety and facts: never contradict safety rules, and never invent dishes or prices that are not in the MENU CONTEXT at the end.
+
+VOICE & LENGTH (from restaurant settings):
+- ${toneLine}
+- ${lengthLine}
+`;
+
+  if (story) {
+    prompt += `
+BRAND & POSITIONING (from owner):
+${story}
+`;
+  }
+
+  if (extra) {
+    prompt += `
+OPERATOR RULES (from owner — follow these):
+${extra}
+`;
+  }
+
+  if (agent.omitAgentName && !displayName) {
+    prompt += `
+Do not refer to yourself by name in your replies.
+`;
+  }
+
+  prompt += `GROUNDING (required):
+- Treat the MENU CONTEXT at the end of this prompt as the only source of truth for specific dishes, prices, availability, ingredients, allergens, dietary tags, spice level, and cuisine type.
 - Do not invent menu items, prices, or ingredients. If something is not in the MENU CONTEXT, do not claim we serve it.
 - If ingredient, allergen, or dietary information is missing from the MENU CONTEXT for a dish, say it is not shown in our menu details here — never guess, infer, or imply safety.
 - Recommendations must be grounded in retrieved lines (names, tags, ingredients). Prefer dishes clearly supported by the context.
 
 MENU FACTS:
-- Use only the MENU CONTEXT below when discussing specific dishes, prices, availability, ingredients, allergens, dietary tags, spice level, or cuisine type.
+- Use only the MENU CONTEXT at the end when discussing specific dishes, prices, availability, ingredients, allergens, dietary tags, spice level, or cuisine type.
 - Do not invent items or prices not supported by the context.
 - If the context does not mention something, do not claim it exists. Frame limits in our voice: what we offer vs. what is not on our menu or not available here — not as a generic "I don't know" or "I don't have information."
 - Avoid phrases like "I don't have information about that," "I don't have access to…," or "As an AI…." Instead use warm, first-plural wording, for example: we're not serving that right now / that's not on our menu / we'd suggest asking our team when you're here / here's what we do have that might work.
@@ -138,42 +176,14 @@ LISTING MULTIPLE DISHES (required):
   :::menu_recommendations:::[{"menuItemId":"<id from context>","name":"<dish name>","price":<number>,"imageUrl":"<exact image URL from context or empty string>"}]
 - Use valid JSON array (minified). Include every dish you name in the reply. Copy menuItemId and imageUrl exactly from MENU CONTEXT. If a dish has no image, use "imageUrl":"".
 - If you are not naming concrete dishes, omit the :::menu_recommendations::: line entirely.
-
-VOICE & LENGTH:
-- ${toneLine}
-- ${lengthLine}
-
-MENU CONTEXT:
-${contextBlock || "(no menu rows retrieved)"}`;
-
-  const story = typeof agent.brandStory === "string" ? agent.brandStory.trim() : "";
-  if (story) {
-    prompt += `
-
-BRAND & POSITIONING:
-${story}`;
-  }
-
-  const extra = typeof agent.customInstructions === "string" ? agent.customInstructions.trim() : "";
-  if (extra) {
-    prompt += `
-
-OPERATOR RULES (follow these):
-${extra}`;
-  }
-
-  if (agent.omitAgentName) {
-    prompt += `
-
-Do not refer to yourself by name in your replies.`;
-  }
+`;
 
   if (discountOn) {
     prompt += `
 
 DISCOUNT / VOUCHER RULES:
 - The restaurant offers an exclusive discount (${pct}) for customers using this chat, as described in the theme.
-- Explain how to get the voucher: the user should tap "${theme.endChatLabel || "End Chat"}" when they are done; a voucher screen will appear.
+- There is no "end chat" or separate voucher button in the guest app: explain that they claim the benefit with the team (e.g. mention the discount to staff, as in the theme copy).
 - To receive voucher benefits, tell the guest to call a friendly staff member and claim the discount voucher; our team will assist with the claim.
 - If relevant, end your message with a line containing exactly: [discount_voucher]
 - Do not promise items that are not in the menu context.`;
@@ -187,13 +197,10 @@ STRICT MODE (this turn):
 - If MENU CONTEXT does not clearly answer the question, say our menu details don't show that here and ask them to confirm with staff before ordering.`;
   }
 
-  if (weakRetrievalGuidance) {
-    prompt += `
+  prompt += `
 
-RETRIEVAL QUALITY (this turn):
-- The menu rows below may be only loosely related to the guest's question. Do not claim a specific dish exists unless it clearly appears in the MENU CONTEXT.
-- If their question targets something not reflected in the context (e.g. a dish type we don't list), say it's not showing in our menu information here and suggest staff help.`;
-  }
+MENU CONTEXT (authoritative for menu facts — read last):
+${contextBlock || "(no menu rows retrieved)"}`;
 
   return prompt;
 }
@@ -296,7 +303,7 @@ export async function handleChatMessage(agent, userText, persistence) {
 
   const confidenceState = computeRetrievalConfidence(contextRows, queryIntent);
   const matchedMenuItems = buildMatchedMenuItemsSummary(contextRows);
-  const fallbackUsed = shouldForceRetrievalFallback(confidenceState.confidence, queryIntent);
+  const fallbackUsed = false;
 
   if (process.env.MENU_RAG_DEBUG) {
     console.log(
@@ -308,7 +315,6 @@ export async function handleChatMessage(agent, userText, persistence) {
         confidence: confidenceState.confidence,
         topSimilarity: confidenceState.topSimilarity,
         thresholds: confidenceState.thresholds,
-        fallbackUsed,
         matchedMenuItems,
       })
     );
@@ -324,29 +330,9 @@ export async function handleChatMessage(agent, userText, persistence) {
     thresholdsUsed: confidenceState.thresholds,
   };
 
-  if (fallbackUsed) {
-    const assistantContent = buildFallbackAssistantText(queryIntent);
-    const ui = buildAssistantUiMetadata([]);
-    const assistantPayload = {
-      content: assistantContent,
-      ...ui,
-    };
-    await persistence.persistExchange(userText, assistantPayload);
-
-    return {
-      assistantMessage: {
-        content: assistantContent,
-        messageId: Date.now(),
-        ...ui,
-      },
-      retrieval: retrievalPayload,
-    };
-  }
-
   const contextBlock = formatMenuContextRows(contextRows);
 
   const systemPrompt = buildSystemPrompt(agent, restaurantName, contextBlock, {
-    weakRetrievalGuidance: confidenceState.confidence === "low",
     strictIntentFocus: Boolean(queryIntent.strictSafetyMode || queryIntent.ingredientFocus),
   });
 

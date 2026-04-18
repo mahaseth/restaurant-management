@@ -553,9 +553,17 @@ export default function ChatDesignWorkspace({
         <label className="text-sm font-medium text-gray-600 dark:text-gray-300">Intro body</label>
         <InputTextarea value={t.introBody || ""} onChange={(e) => setField("introBody", e.target.value)} rows={3} />
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-gray-600 dark:text-gray-300">End chat button</label>
-        <InputText value={t.endChatLabel || ""} onChange={(e) => setField("endChatLabel", e.target.value)} />
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Open the full-screen voucher the guest would see (for layout check). The Voucher tab is the main editor.
+        </p>
+        <Button
+          type="button"
+          label="Preview full voucher modal"
+          icon="pi pi-ticket"
+          className="p-button-outlined w-full"
+          onClick={() => setStudioVoucherPreviewOpen(true)}
+        />
       </div>
     </div>
   );
@@ -647,8 +655,6 @@ export default function ChatDesignWorkspace({
           setMessageInput={() => {}}
           onSend={(e) => e?.preventDefault?.()}
           sending={false}
-          endChatLabel={t.endChatLabel}
-          onEndChat={() => setStudioVoucherPreviewOpen(true)}
           messagesContainerRef={previewScrollRef}
           discountBanner={null}
         />

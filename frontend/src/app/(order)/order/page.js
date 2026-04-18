@@ -28,12 +28,7 @@ import { createPaymentIntent } from "@/api/payment";
 import ExistingOrderLookup from "@/component/order/ExistingOrderLookup";
 import OrderStartScreen from "@/component/order/OrderStartScreen";
 import PaymentDialog from "@/component/order/PaymentDialog";
-
-function formatMoney(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "$0.00";
-  return `$${num.toFixed(2)}`;
-}
+import { formatMoney } from "@/utils/formatMoney";
 
 async function copyTextToClipboard(text) {
   const value = String(text || "");

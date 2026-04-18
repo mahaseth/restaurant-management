@@ -22,6 +22,7 @@ router.delete("/table-session/:sessionToken/cart/items/:menuItemId", publicTable
 router.delete("/table-session/:sessionToken/cart", publicTableSession.deleteCart);
 router.get("/table-session/:sessionToken/agent", publicTableSession.getAgent);
 router.get("/table-session/:sessionToken/conversation", publicTableSession.getConversation);
+router.post("/table-session/:sessionToken/conversation/reset", publicTableSession.postResetConversation);
 router.post("/table-session/:sessionToken/chat/message", publicTableSession.postChatMessage);
 router.get("/table-session/:sessionToken", publicTableSession.getSessionState);
 

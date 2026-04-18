@@ -286,10 +286,10 @@ const MenuItemFormDialog = ({
             <label htmlFor="menuPrice" className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md bg-emerald-50 dark:bg-emerald-900/30
                               flex items-center justify-center">
-                <i className="pi pi-dollar text-emerald-500 dark:text-emerald-400" style={{ fontSize: "0.65rem" }} />
+                <i className="pi pi-wallet text-emerald-500 dark:text-emerald-400" style={{ fontSize: "0.65rem" }} />
               </div>
               <span className="font-semibold text-sm text-gray-700 dark:text-gray-300">
-                Price
+                Price (Rs.)
               </span>
               <span className="text-red-400 text-xs">*</span>
             </label>
@@ -297,12 +297,10 @@ const MenuItemFormDialog = ({
               id="menuPrice"
               value={price}
               onValueChange={(e) => setPrice(e.value)}
-              mode="currency"
-              currency="USD"
-              locale="en-US"
+              mode="decimal"
               min={0}
-              minFractionDigits={2}
-              placeholder="0.00"
+              minFractionDigits={0}
+              maxFractionDigits={2}
               className="w-full"
             />
           </div>

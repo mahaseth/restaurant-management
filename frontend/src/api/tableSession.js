@@ -29,6 +29,11 @@ export async function getTableSessionConversation(sessionToken) {
   return data;
 }
 
+export async function postTableSessionConversationReset(sessionToken) {
+  const { data } = await client.post(`/api/public/table-session/${enc(sessionToken)}/conversation/reset`);
+  return data;
+}
+
 export async function sendTableSessionChatMessage(sessionToken, message) {
   const { data } = await client.post(`/api/public/table-session/${enc(sessionToken)}/chat/message`, {
     message,

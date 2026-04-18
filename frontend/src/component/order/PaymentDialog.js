@@ -9,7 +9,7 @@
  *
  * Props:
  *   clientSecret  — Stripe PaymentIntent client secret
- *   amount        — display amount (number, dollars)
+ *   amount        — display amount (number, rupees)
  *   cartLines     — [{ item: { name, price }, qty }]
  *   onSuccess(paymentIntentId) — called after successful payment
  *   onClose()     — called when user dismisses dialog
@@ -19,6 +19,7 @@ import React, { useState } from "react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "primereact/button";
+import { formatMoney } from "@/utils/formatMoney";
 
 // Lazily initialise once — keeps the publishable key out of the render cycle.
 let stripePromise = null;
@@ -32,12 +33,6 @@ function getStripePromise() {
     stripePromise = loadStripe(key);
   }
   return stripePromise;
-}
-
-function formatMoney(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "$0.00";
-  return `$${num.toFixed(2)}`;
 }
 
 // ─── Inner form — must live inside <Elements> ──────────────────────────────

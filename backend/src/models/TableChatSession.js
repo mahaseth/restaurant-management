@@ -98,6 +98,21 @@ const tableChatSessionSchema = new mongoose.Schema(
       trim: true,
     },
     lastActivityAt: { type: Date, default: Date.now },
+    /** When to clear the AI conversation after a paid or completed order (1 minute grace for the guest to read the thread). */
+    pendingChatResetAt: { type: Date, default: null },
+    pendingChatResetForOrder: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      default: null,
+    },
+    /** The order for which the guest already went through a full 1-min renewal (avoids re-scheduling for the same order). */
+    lastChatClearedForOrder: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      default: null,
+    },
+    /** Bumped when messages are cleared; clients refetch the conversation. */
+    tableChatRevision: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

@@ -25,6 +25,7 @@ import {
   updateOrderPaymentStatusStaff,
   updateOrderStatusStaff,
 } from "@/api/order";
+import { formatMoney } from "@/utils/formatMoney";
 
 const ORDER_STATUS_OPTIONS = [
   { label: "Pending", value: "PENDING" },
@@ -623,7 +624,7 @@ const DashboardPage = () => {
                           {m.description || m.category}
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-300 font-extrabold mt-1">
-                          ${Number(m.price || 0).toFixed(2)}
+                          {formatMoney(m.price)}
                         </p>
                       </div>
 
