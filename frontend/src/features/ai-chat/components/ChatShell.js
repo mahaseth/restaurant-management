@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useChatTheme } from "../utils/ThemeProvider";
 import ThinkingDots from "./ThinkingDots";
-import MenuRecommendationCards from "./MenuRecommendationCards";
+import { MenuRecommendationCard, ImageLightbox } from "./MenuRecommendationCards";
+import { buildInterleavedMessageSegments, lineKind, parseDishLine } from "../utils/interleaveMessageRecommendations";
 import { hexAlpha } from "../utils/brandingPalette";
 
 /** Renders `**bold**` as styled text (avoids raw asterisks in the UI). */
@@ -37,78 +39,385 @@ function normalizeAssistantLine(line) {
   return t.trimEnd();
 }
 
-function lineKind(line) {
-  const t = line.trim();
-  if (!t) return "blank";
-  if (/^\d+[\.\)]\s+/.test(t)) return "ordered";
-  if (/^[-•]\s+/.test(t)) return "bullet";
-  return "text";
+function bubbleShellClass({ embedded, isFromUser }) {
+  if (embedded) {
+    return isFromUser
+      ? "rounded-xl rounded-br-sm px-3 py-2.5 text-[15px] leading-normal shadow-md font-medium"
+      : "rounded-xl rounded-bl-sm px-3 py-2.5 text-[15px] leading-normal font-medium ring-1 ring-slate-200/80";
+  }
+  return isFromUser
+    ? "rounded-[1.15rem] rounded-br-md px-4 py-3 text-[15px] sm:text-base leading-relaxed shadow-md"
+    : "rounded-[1.15rem] rounded-bl-md px-4 py-3 text-[15px] sm:text-base leading-relaxed ring-1 ring-slate-200/80";
 }
 
-function MessageBubble({ m, theme, p, embedded, onAddRecommendationToCart }) {
+function TextLines({ lines, inBubble = false, lineClassName = "" }) {
+  return lines.map((line, i) => {
+    const kind = lineKind(line);
+    if (kind === "blank") return <div key={i} className="h-1.5" />;
+    const isList = kind === "ordered" || kind === "bullet";
+    return (
+      <p
+        key={i}
+        className={
+          lineClassName ||
+          (inBubble
+            ? i
+              ? isList
+                ? "mt-2 text-[14px] leading-relaxed sm:text-[15px]"
+                : "mt-2.5 text-[14px] leading-relaxed sm:text-[15px]"
+              : "text-[14px] leading-relaxed sm:text-[15px]"
+            : i
+              ? isList
+                ? "mt-1.5 rounded-md bg-black/[0.03] px-2.5 py-1 dark:bg-white/[0.05]"
+                : "mt-2"
+              : isList
+                ? "rounded-md bg-black/[0.03] px-2.5 py-1 dark:bg-white/[0.05]"
+                : "")
+        }
+      >
+        <LineWithBold text={line} />
+      </p>
+    );
+  });
+}
+
+function BotAvatar({ avatarUrl, color }) {
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="mt-0.5 h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white/80 shadow-sm sm:h-9 sm:w-9"
+      />
+    );
+  }
+  return (
+    <div
+      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm ring-2 ring-white/80 sm:h-9 sm:w-9"
+      style={{ background: `linear-gradient(145deg, ${color} 0%, ${hexAlpha(color, 0.72)} 100%)` }}
+      aria-hidden
+    >
+      <i className="pi pi-sparkles text-xs text-white sm:text-sm" />
+    </div>
+  );
+}
+
+function MenuPicksLabel({ color }) {
+  return (
+    <div
+      className="mb-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider sm:mb-2 sm:text-[11px]"
+      style={{ color, background: hexAlpha(color, 0.12) }}
+    >
+      <i className="pi pi-star-fill text-[9px] sm:text-[10px]" />
+      <span>Suggested for you</span>
+    </div>
+  );
+}
+
+function QuickReplyChips({ replies, primary, onSelect, disabled }) {
+  if (!Array.isArray(replies) || !replies.length || typeof onSelect !== "function") return null;
+  return (
+    <div className="mt-3 border-t border-black/[0.06] pt-3 dark:border-white/[0.08]">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-[11px]">
+        Quick replies
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {replies.map((qr, i) => (
+          <button
+            key={`${qr.label}-${i}`}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelect(qr.prompt || qr.label)}
+            className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition hover:-translate-y-px hover:shadow-sm active:scale-[0.98] disabled:opacity-50 sm:text-[13px]"
+            style={{
+              borderColor: hexAlpha(primary, 0.25),
+              color: primary,
+              background: hexAlpha(primary, 0.07),
+            }}
+          >
+            <i className="pi pi-comment text-[10px] opacity-70" />
+            {qr.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuestAvatar({ color }) {
+  return (
+    <div
+      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500 ring-2 ring-white/90 shadow-sm sm:h-9 sm:w-9"
+      style={{ color }}
+      aria-hidden
+    >
+      <i className="pi pi-user text-xs sm:text-sm" />
+    </div>
+  );
+}
+
+function splitAssistantSegments(segments) {
+  const menuIdxs = segments
+    .map((s, i) => (s.type === "dish" || s.type === "cards" ? i : -1))
+    .filter((i) => i >= 0);
+  if (!menuIdxs.length) {
+    return { intro: segments.filter((s) => s.type === "text"), menu: [], outro: [] };
+  }
+  const first = menuIdxs[0];
+  const last = menuIdxs[menuIdxs.length - 1];
+  return {
+    intro: segments.slice(0, first).filter((s) => s.type === "text"),
+    menu: segments.slice(first, last + 1).filter((s) => s.type === "dish" || s.type === "cards"),
+    outro: segments.slice(last + 1).filter((s) => s.type === "text"),
+  };
+}
+
+function DishListPanel({ children, primary }) {
+  return (
+    <div
+      className="mt-3 flex flex-col gap-2 rounded-2xl p-2 ring-1 ring-inset sm:gap-2.5 sm:p-2.5"
+      style={{
+        background: `linear-gradient(180deg, ${hexAlpha(primary, 0.06)} 0%, ${hexAlpha(primary, 0.02)} 100%)`,
+        boxShadow: `inset 0 1px 0 ${hexAlpha(primary, 0.08)}`,
+        ["--tw-ring-color"]: hexAlpha(primary, 0.12),
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DishBlock({
+  seg,
+  dishIndex,
+  theme,
+  embedded,
+  primary,
+  onAddRecommendationToCart,
+  onOpenImage,
+  showMenuLabel,
+  spacedTop = false,
+}) {
+  const parsed = parseDishLine(seg.line);
+  const badgeNum = parsed.number || String(dishIndex);
+  const blurb = parsed.description || (parsed.title ? null : seg.line.replace(/^\d+[\.\)]\s+/, "").replace(/^[-•]\s+/, ""));
+
+  return (
+    <div className={spacedTop ? "mt-2.5" : ""}>
+      {showMenuLabel ? <MenuPicksLabel color={primary} /> : null}
+      <MenuRecommendationCard
+        item={seg.item}
+        theme={theme}
+        embedded={embedded}
+        compact
+        inBubble
+        description={blurb}
+        badgeNumber={blurb ? badgeNum : null}
+        onAddToCart={onAddRecommendationToCart}
+        onOpenImage={onOpenImage}
+      />
+    </div>
+  );
+}
+
+function AssistantUnifiedBubble({
+  segments,
+  bubbleClass,
+  bubbleStyle,
+  theme,
+  embedded,
+  avatarUrl,
+  primary,
+  quickReplies,
+  onQuickReply,
+  quickRepliesDisabled,
+  onAddRecommendationToCart,
+  onOpenImage,
+}) {
+  const hasRecs = segments.some((s) => s.type === "dish" || s.type === "cards");
+  const { intro, menu, outro } = splitAssistantSegments(segments);
+  let dishCounter = 0;
+
+  return (
+    <div className="chat-msg-enter flex w-full items-start gap-2.5 sm:gap-3">
+      <BotAvatar avatarUrl={avatarUrl} color={primary} />
+      <div
+        className={`min-w-0 flex-1 shadow-sm ${bubbleClass} ${hasRecs ? "!px-3.5 !py-3.5 sm:!px-4 sm:!py-4" : ""}`}
+        style={{
+          ...bubbleStyle,
+          ...(hasRecs
+            ? {
+                boxShadow: `0 8px 28px -16px ${hexAlpha(primary, 0.28)}`,
+                outline: `1px solid ${hexAlpha(primary, 0.1)}`,
+              }
+            : {}),
+        }}
+        {...(hasRecs && onAddRecommendationToCart ? { "data-menu-recs": "1" } : {})}
+      >
+        <div className="flex flex-col">
+          {intro.map((seg, idx) => {
+            const meaningful = seg.lines.some((l) => String(l).trim());
+            if (!meaningful) return null;
+            return (
+              <div key={`intro-${idx}`} className={idx > 0 ? "mt-2" : ""}>
+                <TextLines
+                  lines={seg.lines}
+                  inBubble
+                  lineClassName={
+                    hasRecs && idx === 0
+                      ? "text-[14px] font-medium leading-[1.6] text-slate-800 sm:text-[15px]"
+                      : undefined
+                  }
+                />
+              </div>
+            );
+          })}
+
+          {menu.length > 0 ? (
+            <DishListPanel primary={primary}>
+              <MenuPicksLabel color={primary} />
+              {menu.map((seg, idx) => {
+                if (seg.type === "dish") {
+                  dishCounter += 1;
+                  return (
+                    <DishBlock
+                      key={`dish-${seg.item.menuItemId || seg.item.name}-${idx}`}
+                      seg={seg}
+                      dishIndex={dishCounter}
+                      theme={theme}
+                      embedded={embedded}
+                      primary={primary}
+                      onAddRecommendationToCart={onAddRecommendationToCart}
+                      onOpenImage={onOpenImage}
+                      showMenuLabel={false}
+                      spacedTop={dishCounter > 1}
+                    />
+                  );
+                }
+                if (seg.type === "cards" && seg.items?.length) {
+                  return seg.items.map((it) => {
+                    dishCounter += 1;
+                    return (
+                      <MenuRecommendationCard
+                        key={`${it.menuItemId || it.name}-${it.name}`}
+                        item={it}
+                        theme={theme}
+                        embedded={embedded}
+                        compact
+                        inBubble
+                        onAddToCart={onAddRecommendationToCart}
+                        onOpenImage={onOpenImage}
+                      />
+                    );
+                  });
+                }
+                return null;
+              })}
+            </DishListPanel>
+          ) : null}
+
+          {outro.map((seg, idx) => {
+            const meaningful = seg.lines.some((l) => String(l).trim());
+            if (!meaningful) return null;
+            return (
+              <div
+                key={`outro-${idx}`}
+                className="mt-3 border-t border-black/[0.06] pt-3 dark:border-white/[0.08]"
+              >
+                <TextLines
+                  lines={seg.lines}
+                  inBubble
+                  lineClassName="text-[13px] leading-[1.6] text-slate-600 dark:text-slate-300 sm:text-[14px]"
+                />
+              </div>
+            );
+          })}
+
+          <QuickReplyChips
+            replies={quickReplies}
+            primary={primary}
+            onSelect={onQuickReply}
+            disabled={quickRepliesDisabled}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessageBubble({
+  m,
+  theme,
+  p,
+  embedded,
+  avatarUrl,
+  onAddRecommendationToCart,
+  onQuickReply,
+  quickRepliesDisabled,
+}) {
+  const [expandedUrl, setExpandedUrl] = useState(null);
   const menuCards =
     !m.isFromUser && Array.isArray(m.menuRecommendations) && m.menuRecommendations.length > 0
       ? m.menuRecommendations
       : null;
   const hasText = Boolean((m.content || "").trim());
-  const renderedLines = (m.content || "")
+  const normalizedContent = (m.content || "")
     .split("\n")
-    .map((line) => (m.isFromUser ? line : normalizeAssistantLine(line)));
+    .map((line) => (m.isFromUser ? line : normalizeAssistantLine(line)))
+    .join("\n");
+
+  const bubbleStyle = {
+    background: m.isFromUser ? theme.userBubbleBg || p : theme.botBubbleBg || "#f8fafc",
+    color: m.isFromUser ? theme.userBubbleText || "#fff" : theme.botBubbleText || "#1e293b",
+    boxShadow: m.isFromUser
+      ? `0 8px 24px -8px ${hexAlpha(p, 0.45)}`
+      : `0 4px 20px -12px ${hexAlpha(p, 0.12)}`,
+  };
+
+  if (m.isFromUser) {
+    const lines = normalizedContent.split("\n");
+    return (
+      <div className="chat-msg-enter flex w-full items-start justify-end gap-2 sm:gap-2.5">
+        <div
+          className={`min-w-0 max-w-[78%] shadow-sm sm:max-w-[75%] ${bubbleShellClass({ embedded, isFromUser: true })}`}
+          style={bubbleStyle}
+        >
+          <TextLines lines={lines} />
+        </div>
+        <GuestAvatar color={p} />
+      </div>
+    );
+  }
+
+  const segments = menuCards
+    ? buildInterleavedMessageSegments(normalizedContent, menuCards)
+    : hasText
+      ? [{ type: "text", lines: normalizedContent.split("\n") }]
+      : [];
+
+  const hasUnifiedContent = hasText || menuCards;
+
+  if (!hasUnifiedContent) return null;
+
+  const bubbleClass = bubbleShellClass({ embedded, isFromUser: false });
 
   return (
-    <div className={`flex w-full flex-col gap-1.5 ${m.isFromUser ? "items-end" : "items-start"}`}>
-      {hasText ? (
-        <div
-          className={`max-w-[88%] shadow-sm sm:max-w-[85%] ${
-            embedded
-              ? `rounded-xl px-3 py-2.5 text-[15px] leading-normal ${
-                  m.isFromUser ? "rounded-br-sm shadow-md font-medium" : "rounded-bl-sm ring-1 ring-slate-200/80 font-medium"
-                }`
-              : `rounded-[1.15rem] px-4 py-3 text-[15px] sm:text-base leading-relaxed ${
-                  m.isFromUser ? "rounded-br-md shadow-md" : "rounded-bl-md ring-1 ring-slate-200/80"
-                }`
-          }`}
-          style={{
-            background: m.isFromUser ? theme.userBubbleBg || p : theme.botBubbleBg || "#f1f5f9",
-            color: m.isFromUser ? theme.userBubbleText || "#fff" : theme.botBubbleText || "#1e293b",
-            boxShadow: m.isFromUser ? `0 8px 24px -8px ${hexAlpha(p, 0.45)}` : undefined,
-          }}
-        >
-          {renderedLines.map((line, i) => {
-            const kind = lineKind(line);
-            if (kind === "blank") return <div key={i} className="h-1" />;
-            return (
-              <p
-                key={i}
-                className={
-                  i
-                    ? kind === "ordered" || kind === "bullet"
-                      ? "mt-1.5 rounded-md bg-black/[0.03] px-2.5 py-1 dark:bg-white/[0.05]"
-                      : "mt-2"
-                    : kind === "ordered" || kind === "bullet"
-                      ? "rounded-md bg-black/[0.03] px-2.5 py-1 dark:bg-white/[0.05]"
-                    : ""
-                }
-              >
-                <LineWithBold text={line} />
-              </p>
-            );
-          })}
-        </div>
-      ) : null}
-      {menuCards ? (
-        <div
-          className={embedded ? "w-full max-w-[95%]" : "w-full max-w-[88%] sm:max-w-[85%]"}
-          data-menu-recs={onAddRecommendationToCart ? "1" : undefined}
-        >
-          <MenuRecommendationCards
-            items={menuCards}
-            theme={theme}
-            embedded={embedded}
-            onAddToCart={onAddRecommendationToCart}
-          />
-        </div>
-      ) : null}
+    <div className={`flex w-full flex-col items-start ${embedded ? "max-w-[95%]" : "max-w-[92%] sm:max-w-[88%]"}`}>
+      <AssistantUnifiedBubble
+        segments={segments}
+        bubbleClass={bubbleClass}
+        bubbleStyle={bubbleStyle}
+        theme={theme}
+        embedded={embedded}
+        avatarUrl={avatarUrl}
+        primary={p}
+        quickReplies={m.quickReplies}
+        onQuickReply={onQuickReply}
+        quickRepliesDisabled={quickRepliesDisabled}
+        onAddRecommendationToCart={onAddRecommendationToCart}
+        onOpenImage={setExpandedUrl}
+      />
+      <ImageLightbox url={expandedUrl} onClose={() => setExpandedUrl(null)} />
     </div>
   );
 }
@@ -135,6 +444,8 @@ export default function ChatShell({
   backgroundImageUrl = null,
   /** When set, recommendation cards show an "Add to cart" control (table session). */
   onAddRecommendationToCart = null,
+  /** Tap a suggested reply chip (e.g. fill composer or send). */
+  onQuickReply = null,
   /** Disable typing/sending (e.g. AI off for this venue). */
   composerDisabled = false,
   /** When set, table QR guest UI: brand in header; table + order status share the strip under the header. */
@@ -294,17 +605,22 @@ export default function ChatShell({
                 m={m}
                 theme={theme}
                 p={p}
+                avatarUrl={avatarUrl}
                 embedded={false}
                 onAddRecommendationToCart={onAddRecommendationToCart}
+                onQuickReply={onQuickReply}
+                quickRepliesDisabled={sending || composerDisabled}
               />
             ))}
             {thinking ? (
-              <div className="flex justify-start">
+              <div className="chat-msg-enter flex w-full max-w-[92%] items-start gap-2 sm:max-w-[88%] sm:gap-2.5">
+                <BotAvatar avatarUrl={avatarUrl} color={p} />
                 <div
-                  className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm italic ring-1 ring-slate-200/80 shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-[1.15rem] rounded-bl-md px-4 py-2.5 text-sm ring-1 ring-slate-200/80 shadow-sm"
                   style={{
-                    background: theme.botBubbleBg || "#f1f5f9",
+                    background: theme.botBubbleBg || "#f8fafc",
                     color: theme.botBubbleText || "#475569",
+                    boxShadow: `0 4px 20px -12px ${hexAlpha(p, 0.12)}`,
                   }}
                 >
                   <ThinkingDots />
@@ -326,9 +642,15 @@ export default function ChatShell({
         >
           <div className="mx-auto max-w-3xl px-3 py-1.5 sm:px-5 sm:py-2.5">
             <div
-              className="flex items-end gap-1.5 rounded-xl bg-slate-50/95 p-1 pl-2.5 ring-1 ring-slate-200/80 focus-within:ring-2 focus-within:ring-offset-0 sm:gap-2 sm:rounded-2xl sm:p-1.5 sm:pl-3"
-              style={{ ["--chat-ring"]: hexAlpha(p, 0.38) }}
+              className="flex items-end gap-1.5 rounded-xl bg-white p-1 pl-2.5 ring-1 ring-slate-200/90 transition-shadow focus-within:ring-2 focus-within:ring-offset-0 focus-within:ring-[color:var(--chat-ring)] sm:gap-2 sm:rounded-2xl sm:p-1.5 sm:pl-3"
+              style={{
+                ["--chat-ring"]: hexAlpha(p, 0.38),
+                boxShadow: `0 2px 12px -6px ${hexAlpha(p, 0.08)}`,
+              }}
             >
+              <span className="mb-2.5 hidden shrink-0 pl-0.5 text-slate-400 sm:mb-3 sm:inline" aria-hidden>
+                <i className="pi pi-comment text-base" />
+              </span>
               <textarea
                 rows={1}
                 className="min-h-[40px] max-h-[120px] min-w-0 flex-1 resize-none rounded-lg border-0 bg-transparent px-0.5 py-2 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 sm:min-h-[48px] sm:rounded-xl sm:py-3 sm:text-base"
@@ -457,8 +779,11 @@ export default function ChatShell({
               m={m}
               theme={theme}
               p={p}
+              avatarUrl={avatarUrl}
               embedded
               onAddRecommendationToCart={onAddRecommendationToCart}
+              onQuickReply={onQuickReply}
+              quickRepliesDisabled={sending || composerDisabled}
             />
           ))}
           {thinking && (

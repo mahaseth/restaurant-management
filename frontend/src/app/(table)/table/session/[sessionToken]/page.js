@@ -437,10 +437,9 @@ export default function UnifiedTableSessionPage() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [sessionToken, ingestOrderStatusPayload]);
 
-  const handleSend = useCallback(
-    async (e) => {
-      e?.preventDefault?.();
-      const text = messageInput.trim();
+  const sendMessage = useCallback(
+    async (rawText) => {
+      const text = String(rawText ?? "").trim();
       if (!text || !sessionToken || !agentAvailable || sending) return;
 
       const userMsg = { messageId: Date.now(), content: text, isFromUser: true };
@@ -488,7 +487,15 @@ export default function UnifiedTableSessionPage() {
         setTimeout(() => scrollToBottom(true), 50);
       }
     },
-    [messageInput, sessionToken, agentAvailable, sending, scrollToBottom]
+    [sessionToken, agentAvailable, sending, scrollToBottom]
+  );
+
+  const handleSend = useCallback(
+    (e) => {
+      e?.preventDefault?.();
+      void sendMessage(messageInput);
+    },
+    [messageInput, sendMessage]
   );
 
   const addRecToCart = useCallback(
@@ -831,6 +838,7 @@ export default function UnifiedTableSessionPage() {
                   messagesContainerRef={messagesContainerRef}
                   discountBanner={isDiscountEnabled(theme) ? theme.voucherBannerLabel : null}
                   onAddRecommendationToCart={agentAvailable ? addRecToCart : null}
+                  onQuickReply={agentAvailable ? (prompt) => void sendMessage(prompt) : null}
                   guestTableNumber={tableNumDisplay}
                   guestOrderStatusPill={guestOrderStatusPill}
                 />
