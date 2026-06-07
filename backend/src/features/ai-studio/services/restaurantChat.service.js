@@ -25,9 +25,11 @@ const TONE_GUIDANCE = {
 
 const LENGTH_GUIDANCE = {
   concise:
-    "Keep replies to at most 2–3 short sentences unless the user clearly asks for more detail.",
-  default: "Keep replies concise unless the user asks for more detail.",
-  verbose: "You may give richer explanations when it helps the guest choose dishes or understand options.",
+    "Keep general replies brief (2–3 short sentences). When listing dishes, still add one short reason per item after an em dash — never name-only lists.",
+  default:
+    "Write like a knowledgeable server: warm intro, then helpful detail. When recommending dishes, explain why each pick fits the guest — not just names and prices.",
+  verbose:
+    "Give rich, descriptive replies. For recommendations, use a welcoming intro, 2–3 sentences of context, and 2–3 sentences per dish drawn from MENU CONTEXT (flavor, ingredients, who it suits).",
 };
 const RETRIEVAL_LIMIT = 5;
 /** Fetch extra neighbors from pgvector, then keyword-boost and trim to RETRIEVAL_LIMIT. */
@@ -166,11 +168,21 @@ MENU IMAGES & DISH CARDS (guest chat UI):
 - MENU CONTEXT entries include [menu_item_id: …] and an "Image URL (use when recommending):" line. Copy those URLs exactly into the JSON trailer so thumbnails load.
 - Do not use markdown (no **asterisks** or # headings). Write dish names in plain text so guests never see raw ** symbols.
 
+RECOMMENDATION STYLE (required when naming dishes):
+- Before the list, write 1–3 friendly sentences: acknowledge what the guest asked for, how you chose these picks, and any helpful context (e.g. spice level, sharing, dietary fit) grounded in MENU CONTEXT.
+- After the list, add 1–2 short closing sentences: invite questions, suggest pairing or next steps, or mention they can add items to cart from the cards below.
+- Never reply with only a bare list — guests should always see real explanations, not just dish names.
+
+SINGLE DISH RECOMMENDATIONS:
+- If you recommend only one dish, still explain why it fits in 2–4 sentences (flavor, ingredients, who it suits, price) before or around naming it. Use the same :::menu_recommendations::: trailer with one item.
+
 LISTING MULTIPLE DISHES (required):
-- If you mention two or more dishes, use a numbered or dashed list with ONE dish per line (never one long paragraph listing several items).
+- If you mention two or more dishes, use a numbered list with ONE dish per line (never one long paragraph listing several items).
+- Each line MUST use this pattern: NUMBER. Dish Name — explanation (1–2 sentences) including why it fits, taste or ingredients from MENU CONTEXT, and price.
+- Put the price at the end of the explanation (e.g. "…great for sharing. Rs 450" or "…mild and comforting. $12").
 - Example:
-  1. Momo — $25
-  2. Chicken Thali Biryani — $3
+  1. Vegetable Momo — Steamed dumplings filled with seasoned vegetables; a light, popular starter if you want something familiar and not too heavy. Rs 280
+  2. Dal Bhat — Our classic lentil soup with rice; filling, comforting, and a safe choice when you want traditional Nepali flavors. Rs 350
 
 - When you list or recommend specific dishes, after your reply add exactly one new line (no markdown code fences) containing:
   :::menu_recommendations:::[{"menuItemId":"<id from context>","name":"<dish name>","price":<number>,"imageUrl":"<exact image URL from context or empty string>"}]
@@ -344,7 +356,8 @@ export async function handleChatMessage(agent, userText, persistence) {
 
   const responseStyle =
     agent.responseStyle === "concise" || agent.responseStyle === "verbose" ? agent.responseStyle : "default";
-  const maxTokens = responseStyle === "verbose" ? 1100 : 800;
+  const maxTokens =
+    responseStyle === "verbose" ? 1600 : responseStyle === "concise" ? 700 : 1300;
 
   const completion = await openai.chat.completions.create({
     model,
